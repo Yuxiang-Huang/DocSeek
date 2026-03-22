@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: docseek-upmc-postgres
+    environment:
+      POSTGRES_USER: docseek
+      POSTGRES_PASSWORD: docseek
+      POSTGRES_DB: docseek_upmc
+    ports:
+      - "55432:5432"
+    volumes:
+      - ./scraper/.docker-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docseek -d docseek_upmc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: oven/bun:1
+    working_dir: /workspace/api
+    command: >
+      sh -lc "bun install --frozen-lockfile && bun run dev"
+    environment:
+      PORT: "3000"
+      DATABASE_URL: postgresql://docseek:docseek@postgres:5432/docseek_upmc
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspace
+      - api_node_modules:/workspace/api/node_modules
+      - bun_install_cache:/root/.bun/install/cache
+
+  client:
+    image: oven/bun:1
+    working_dir: /workspace/client
+    command: >
+      sh -lc "bun install --frozen-lockfile && bun x vite dev --host 0.0.0.0 --port 5173"
+    environment:
+      VITE_API_URL: http://api:3000
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/workspace
+      - client_node_modules:/workspace/client/node_modules
+      - bun_install_cache:/root/.bun/install/cache
+
+volumes:
+  api_node_modules:
+  client_node_modules:
+  bun_install_cache:

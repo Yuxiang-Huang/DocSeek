@@ -15,6 +15,15 @@ dist-ssr/
 .wrangler/
 __unconfig*
 todos.json
+.venv/
+__pycache__/
+.pytest_cache/
+
+# scraper runtime data
+scraper/.docker-postgres/
+scraper/.postgres-data/
+scraper/.postgres-log/
+scraper/upmc_doctors.json
 
 # system files
 .DS_Store
