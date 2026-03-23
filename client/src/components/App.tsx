@@ -1,7 +1,9 @@
-import * as React from "react";
-import { ArrowRight, Search, Stethoscope } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, Search, Stethoscope } from "lucide-react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+const API_BASE_URL =
+	import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 export const SUGGESTED_SYMPTOMS = [
 	"Migraines",
@@ -9,7 +11,7 @@ export const SUGGESTED_SYMPTOMS = [
 	"Broken leg",
 ] as const;
 
-type Doctor = {
+export type Doctor = {
 	id: number;
 	full_name: string;
 	primary_specialty: string | null;
@@ -29,8 +31,61 @@ type SearchDoctorsOptions = {
 	fetchImpl?: typeof fetch;
 };
 
+type SearchPageShellProps = {
+	children: ReactNode;
+};
+
+type SearchFormProps = {
+	symptoms: string;
+	onSymptomsChange: (value: string) => void;
+	onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+	isLoading?: boolean;
+};
+
+type SearchHeroProps = SearchFormProps & {
+	errorMessage?: string;
+};
+
+type HomePageProps = {
+	navigateToResults: (symptoms: string) => void;
+};
+
+type DoctorRecommendationCardProps = {
+	doctors: Doctor[];
+	activeDoctorIndex: number;
+	onNextDoctor: () => void;
+};
+
+type ResultsHeaderProps = {
+	includeBackLink?: boolean;
+	initialSymptoms: string;
+};
+
+type ResultsSearchSummaryProps = {
+	symptoms: string;
+};
+
+type ResultsPageProps = {
+	initialSymptoms: string;
+	searchDoctorsImpl?: typeof searchDoctors;
+	includeBackLink?: boolean;
+};
+
 export function getDoctorSearchUrl(apiBaseUrl = API_BASE_URL) {
 	return `${apiBaseUrl}/doctors/search`;
+}
+
+export function normalizeSymptoms(symptoms: string) {
+	return symptoms.trim();
+}
+
+export function getResultsNavigation(symptoms: string) {
+	return {
+		to: "/results" as const,
+		search: {
+			symptoms: normalizeSymptoms(symptoms),
+		},
+	};
 }
 
 export function getNextRecommendationLabel(hasNextDoctor: boolean) {
@@ -41,14 +96,13 @@ export function getNextRecommendationLabel(hasNextDoctor: boolean) {
 
 export async function searchDoctors(
 	symptoms: string,
-	{
-		apiBaseUrl = API_BASE_URL,
-		fetchImpl = fetch,
-	}: SearchDoctorsOptions = {},
+	{ apiBaseUrl = API_BASE_URL, fetchImpl = fetch }: SearchDoctorsOptions = {},
 ): Promise<Doctor[]> {
-	const trimmedSymptoms = symptoms.trim();
+	const trimmedSymptoms = normalizeSymptoms(symptoms);
 	if (!trimmedSymptoms) {
-		throw new Error("Enter your current symptoms to search for matching doctors.");
+		throw new Error(
+			"Enter your current symptoms to search for matching doctors.",
+		);
 	}
 
 	const response = await fetchImpl(getDoctorSearchUrl(apiBaseUrl), {
@@ -61,7 +115,9 @@ export async function searchDoctors(
 		}),
 	});
 
-	const payload = (await response.json()) as DoctorSearchResponse | { error?: string };
+	const payload = (await response.json()) as
+		| DoctorSearchResponse
+		| { error?: string };
 
 	if (!response.ok) {
 		throw new Error(
@@ -78,103 +134,314 @@ export async function searchDoctors(
 	return payload.doctors;
 }
 
-export function App() {
-	const [symptoms, setSymptoms] = React.useState("");
-	const [doctors, setDoctors] = React.useState<Doctor[]>([]);
-	const [activeDoctorIndex, setActiveDoctorIndex] = React.useState(0);
-	const [errorMessage, setErrorMessage] = React.useState("");
-	const [isLoading, setIsLoading] = React.useState(false);
-
-	const activeDoctor = doctors[activeDoctorIndex];
-	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
-
-	async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-
-		setIsLoading(true);
-		setErrorMessage("");
-
-		try {
-			const matchedDoctors = await searchDoctors(symptoms);
-
-			setDoctors(matchedDoctors);
-			setActiveDoctorIndex(0);
-
-			if (matchedDoctors.length === 0) {
-				setErrorMessage("No doctors matched those symptoms. Try adding more detail.");
-			}
-		} catch (error) {
-			setDoctors([]);
-			setActiveDoctorIndex(0);
-			setErrorMessage(
-				error instanceof Error
-					? error.message
-					: "Unable to search for doctors right now.",
-			);
-		} finally {
-			setIsLoading(false);
-		}
-	}
-
+export function SearchPageShell({ children }: SearchPageShellProps) {
 	return (
 		<main className="app-shell">
 			<div className="background-orb background-orb-left" aria-hidden="true" />
 			<div className="background-orb background-orb-right" aria-hidden="true" />
 			<div className="constellation constellation-top" aria-hidden="true" />
 			<div className="constellation constellation-bottom" aria-hidden="true" />
-			<section className="hero">
-				<div className="brand-lockup">
-					<div className="brand-mark" aria-hidden="true">
-						<Stethoscope size={36} strokeWidth={2.1} />
-					</div>
-					<p className="eyebrow">DocSeek</p>
+			{children}
+		</main>
+	);
+}
+
+export function SearchForm({
+	symptoms,
+	onSymptomsChange,
+	onSubmit,
+	isLoading = false,
+}: SearchFormProps) {
+	return (
+		<form className="search-form" onSubmit={onSubmit}>
+			<label className="sr-only" htmlFor="symptoms">
+				Current symptoms
+			</label>
+			<div className="search-frame">
+				<div className="search-input-wrap">
+					<Search className="search-icon" size={28} strokeWidth={1.9} />
+					<textarea
+						id="symptoms"
+						name="symptoms"
+						className="symptoms-input"
+						rows={1}
+						value={symptoms}
+						onChange={(event) => onSymptomsChange(event.target.value)}
+						placeholder="I have chest pains"
+					/>
 				</div>
-				<h1>How can we help you today?</h1>
-				<p className="lede">
-					Describe what you are feeling and DocSeek will surface the strongest
-					doctor matches one recommendation at a time.
+				<button
+					className="primary-action"
+					type="submit"
+					disabled={isLoading}
+					aria-label={isLoading ? "Finding doctors" : "Find matching doctors"}
+				>
+					<ArrowRight size={34} strokeWidth={2.1} />
+				</button>
+			</div>
+		</form>
+	);
+}
+
+export function SearchHero({
+	symptoms,
+	onSymptomsChange,
+	onSubmit,
+	isLoading = false,
+	errorMessage,
+}: SearchHeroProps) {
+	return (
+		<section className="hero">
+			<div className="brand-lockup">
+				<div className="brand-mark" aria-hidden="true">
+					<Stethoscope size={36} strokeWidth={2.1} />
+				</div>
+				<p className="eyebrow">DocSeek</p>
+			</div>
+			<h1>How can we help you today?</h1>
+			<p className="lede">
+				Describe what you are feeling and DocSeek will surface the strongest
+				doctor matches on a separate results page.
+			</p>
+
+			<SearchForm
+				symptoms={symptoms}
+				onSymptomsChange={onSymptomsChange}
+				onSubmit={onSubmit}
+				isLoading={isLoading}
+			/>
+
+			<div className="suggestion-list">
+				{SUGGESTED_SYMPTOMS.map((suggestion) => (
+					<button
+						key={suggestion}
+						className="suggestion-chip"
+						type="button"
+						onClick={() => onSymptomsChange(suggestion)}
+					>
+						{suggestion}
+					</button>
+				))}
+			</div>
+
+			{errorMessage ? (
+				<p className="feedback-message" role="alert">
+					{errorMessage}
 				</p>
+			) : null}
+		</section>
+	);
+}
 
-				<form className="search-form" onSubmit={handleSubmit}>
-					<label className="sr-only" htmlFor="symptoms">
-						Current symptoms
-					</label>
-					<div className="search-frame">
-						<div className="search-input-wrap">
-							<Search className="search-icon" size={28} strokeWidth={1.9} />
-							<textarea
-								id="symptoms"
-								name="symptoms"
-								className="symptoms-input"
-								rows={1}
-								value={symptoms}
-								onChange={(event) => setSymptoms(event.target.value)}
-								placeholder="I have chest pains"
-							/>
-						</div>
-						<button
-							className="primary-action"
-							type="submit"
-							disabled={isLoading}
-							aria-label={isLoading ? "Finding doctors" : "Find matching doctors"}
-						>
-							<ArrowRight size={34} strokeWidth={2.1} />
-						</button>
-					</div>
-				</form>
+export function HomePage({ navigateToResults }: HomePageProps) {
+	const [symptoms, setSymptoms] = useState("");
+	const [errorMessage, setErrorMessage] = useState("");
 
-				<div className="suggestion-list" aria-label="Suggested searches">
-					{SUGGESTED_SYMPTOMS.map((suggestion) => (
-						<button
-							key={suggestion}
-							className="suggestion-chip"
-							type="button"
-							onClick={() => setSymptoms(suggestion)}
-						>
-							{suggestion}
-						</button>
-					))}
+	function handleSubmit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+
+		const trimmedSymptoms = normalizeSymptoms(symptoms);
+		if (!trimmedSymptoms) {
+			setErrorMessage(
+				"Enter your current symptoms to search for matching doctors.",
+			);
+			return;
+		}
+
+		setErrorMessage("");
+		navigateToResults(trimmedSymptoms);
+	}
+
+	return (
+		<SearchPageShell>
+			<SearchHero
+				symptoms={symptoms}
+				onSymptomsChange={setSymptoms}
+				onSubmit={handleSubmit}
+				errorMessage={errorMessage}
+			/>
+		</SearchPageShell>
+	);
+}
+
+export function DoctorRecommendationCard({
+	doctors,
+	activeDoctorIndex,
+	onNextDoctor,
+}: DoctorRecommendationCardProps) {
+	const activeDoctor = doctors[activeDoctorIndex];
+	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
+
+	if (!activeDoctor) {
+		return null;
+	}
+
+	return (
+		<section className="doctor-card" aria-live="polite">
+			<div className="doctor-card-header">
+				<div>
+					<p className="result-count">
+						Recommendation {activeDoctorIndex + 1} of {doctors.length}
+					</p>
+					<h2>{activeDoctor.full_name}</h2>
 				</div>
+				<p
+					className={
+						activeDoctor.accepting_new_patients
+							? "availability availability-open"
+							: "availability"
+					}
+				>
+					{activeDoctor.accepting_new_patients
+						? "Accepting new patients"
+						: "Check availability"}
+				</p>
+			</div>
+			<p className="doctor-meta">
+				{activeDoctor.primary_specialty ?? "Specialty not listed"}
+			</p>
+			<div className="doctor-details">
+				<p className="doctor-detail">
+					{activeDoctor.primary_location ?? "Location not listed"}
+				</p>
+				<p className="doctor-detail">
+					{activeDoctor.primary_phone ?? "Phone number not listed"}
+				</p>
+			</div>
+			<div className="doctor-links">
+				{activeDoctor.profile_url ? (
+					<a href={activeDoctor.profile_url} target="_blank" rel="noreferrer">
+						View profile
+					</a>
+				) : null}
+				{activeDoctor.book_appointment_url ? (
+					<a
+						href={activeDoctor.book_appointment_url}
+						target="_blank"
+						rel="noreferrer"
+					>
+						Book appointment
+					</a>
+				) : null}
+				<button
+					className="secondary-action"
+					type="button"
+					onClick={onNextDoctor}
+					disabled={!hasNextDoctor}
+				>
+					{getNextRecommendationLabel(hasNextDoctor)}
+				</button>
+			</div>
+		</section>
+	);
+}
+
+export function ResultsHeader({
+	includeBackLink = true,
+	initialSymptoms,
+}: ResultsHeaderProps) {
+	return (
+		<div className="results-header">
+			<div className="results-header-top">
+				{includeBackLink ? (
+					<Link className="back-link" to="/">
+						<ArrowLeft size={18} strokeWidth={2.2} />
+						Start a new search
+					</Link>
+				) : null}
+				<ResultsSearchSummary symptoms={initialSymptoms} />
+			</div>
+			<div className="results-copy">
+				<p className="results-kicker">Recommended doctors</p>
+				<p className="results-lede">
+					Review one doctor at a time, then move to the next recommendation if
+					you want more options.
+				</p>
+			</div>
+		</div>
+	);
+}
+
+export function ResultsSearchSummary({ symptoms }: ResultsSearchSummaryProps) {
+	return (
+		<div className="results-search-summary">
+			<div className="results-search-frame">
+				<Search
+					className="search-icon results-search-icon"
+					size={22}
+					strokeWidth={1.9}
+				/>
+				<p className="results-search-text">{symptoms}</p>
+			</div>
+		</div>
+	);
+}
+
+export function ResultsPage({
+	initialSymptoms,
+	searchDoctorsImpl = searchDoctors,
+	includeBackLink = false,
+}: ResultsPageProps) {
+	const [doctors, setDoctors] = useState<Doctor[]>([]);
+	const [activeDoctorIndex, setActiveDoctorIndex] = useState(0);
+	const [errorMessage, setErrorMessage] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
+
+	useEffect(() => {
+		let ignore = false;
+
+		async function loadDoctors() {
+			setIsLoading(true);
+			setErrorMessage("");
+
+			try {
+				const matchedDoctors = await searchDoctorsImpl(initialSymptoms);
+
+				if (ignore) {
+					return;
+				}
+
+				setDoctors(matchedDoctors);
+				setActiveDoctorIndex(0);
+
+				if (matchedDoctors.length === 0) {
+					setErrorMessage(
+						"No doctors matched those symptoms. Try adding more detail.",
+					);
+				}
+			} catch (error) {
+				if (ignore) {
+					return;
+				}
+
+				setDoctors([]);
+				setActiveDoctorIndex(0);
+				setErrorMessage(
+					error instanceof Error
+						? error.message
+						: "Unable to search for doctors right now.",
+				);
+			} finally {
+				if (!ignore) {
+					setIsLoading(false);
+				}
+			}
+		}
+
+		void loadDoctors();
+
+		return () => {
+			ignore = true;
+		};
+	}, [initialSymptoms, searchDoctorsImpl]);
+
+	return (
+		<SearchPageShell>
+			<section className="results-page">
+				<ResultsHeader
+					includeBackLink={includeBackLink}
+					initialSymptoms={initialSymptoms}
+				/>
 
 				{errorMessage ? (
 					<p className="feedback-message" role="alert">
@@ -182,67 +449,16 @@ export function App() {
 					</p>
 				) : null}
 
-				{activeDoctor ? (
-					<section className="doctor-card" aria-live="polite">
-						<div className="doctor-card-header">
-							<div>
-								<p className="result-count">
-									Recommendation {activeDoctorIndex + 1} of {doctors.length}
-								</p>
-								<h2>{activeDoctor.full_name}</h2>
-							</div>
-							<p
-								className={
-									activeDoctor.accepting_new_patients
-										? "availability availability-open"
-										: "availability"
-								}
-							>
-								{activeDoctor.accepting_new_patients
-									? "Accepting new patients"
-									: "Check availability"}
-							</p>
-						</div>
-						<p className="doctor-meta">
-							{activeDoctor.primary_specialty ?? "Specialty not listed"}
-						</p>
-						<div className="doctor-details">
-							<p className="doctor-detail">
-								{activeDoctor.primary_location ?? "Location not listed"}
-							</p>
-							<p className="doctor-detail">
-								{activeDoctor.primary_phone ?? "Phone number not listed"}
-							</p>
-						</div>
-						<div className="doctor-links">
-							{activeDoctor.profile_url ? (
-								<a href={activeDoctor.profile_url} target="_blank" rel="noreferrer">
-									View profile
-								</a>
-							) : null}
-							{activeDoctor.book_appointment_url ? (
-								<a
-									href={activeDoctor.book_appointment_url}
-									target="_blank"
-									rel="noreferrer"
-								>
-									Book appointment
-								</a>
-							) : null}
-							<button
-								className="secondary-action"
-								type="button"
-								onClick={() =>
-									setActiveDoctorIndex((currentIndex) => currentIndex + 1)
-								}
-								disabled={!hasNextDoctor}
-							>
-								{getNextRecommendationLabel(hasNextDoctor)}
-							</button>
-						</div>
-					</section>
+				{!errorMessage && !isLoading && doctors.length > 0 ? (
+					<DoctorRecommendationCard
+						doctors={doctors}
+						activeDoctorIndex={activeDoctorIndex}
+						onNextDoctor={() =>
+							setActiveDoctorIndex((currentIndex) => currentIndex + 1)
+						}
+					/>
 				) : null}
 			</section>
-		</main>
+		</SearchPageShell>
 	);
 }

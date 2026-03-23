@@ -1,8 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
 import {
-	SUGGESTED_SYMPTOMS,
 	getDoctorSearchUrl,
 	getNextRecommendationLabel,
+	getResultsNavigation,
+	normalizeSymptoms,
+	SUGGESTED_SYMPTOMS,
 	searchDoctors,
 } from "../components/App";
 
@@ -78,11 +80,18 @@ describe("doctor search helpers", () => {
 	});
 
 	test("exposes the quick symptom suggestions in the designed order", () => {
-		expect(SUGGESTED_SYMPTOMS).toEqual([
-			"Migraines",
-			"Nearest UPMC",
-			"MRI scan",
-			"Broken leg",
-		]);
+		expect(SUGGESTED_SYMPTOMS).toEqual(["Migraines", "MRI scan", "Broken leg"]);
+	});
+});
+
+describe("frontend page flow", () => {
+	test("normalizes symptom input before navigating to the results page", () => {
+		expect(normalizeSymptoms("  migraines  ")).toBe("migraines");
+		expect(getResultsNavigation("  migraines  ")).toEqual({
+			to: "/results",
+			search: {
+				symptoms: "migraines",
+			},
+		});
 	});
 });
