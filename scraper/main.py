@@ -23,7 +23,7 @@ SEARCH_URL = BASE_URL + "/search?sort=name&page={page}"
 DEFAULT_DB_NAME = "docseek_upmc"
 DEFAULT_DB_PORT = 55432
 DEFAULT_DATA_FILE = Path(__file__).with_name("upmc_doctors.json")
-SCHEMA_FILE = Path(__file__).with_name("schema.sql")
+SCHEMA_FILE = Path(__file__).parent / "postgres" / "schema.sql"
 PAGE_DELAY_SECONDS = 5
 
 

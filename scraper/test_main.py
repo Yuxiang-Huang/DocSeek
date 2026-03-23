@@ -1,4 +1,16 @@
-from main import CardData, build_doctor_record, extract_card_data, normalize_tags
+from main import (
+    SCHEMA_FILE,
+    CardData,
+    build_doctor_record,
+    extract_card_data,
+    normalize_tags,
+)
+
+
+def test_schema_file_lives_in_postgres_folder() -> None:
+    assert SCHEMA_FILE.name == "schema.sql"
+    assert SCHEMA_FILE.parent.name == "postgres"
+    assert SCHEMA_FILE.is_file()
 
 
 def test_extract_card_data_reads_name_specialty_tags_and_ratings_link() -> None:
