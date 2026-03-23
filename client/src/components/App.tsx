@@ -199,7 +199,7 @@ export function SearchHero({
 				<p className="eyebrow">DocSeek</p>
 			</div>
 			<h1>How can we help you today?</h1>
-			<p className="lede">
+			<p className="lede hero-lede">
 				Describe what you are feeling and DocSeek will surface the strongest
 				doctor matches on a separate results page.
 			</p>

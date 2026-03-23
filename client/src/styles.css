@@ -567,9 +567,55 @@ a {
     44rem 3rem 0 rgba(79, 141, 255, 0.24);
 }
 
+@media (max-width: 960px) {
+  .app-shell {
+    padding: 2.5rem 1.25rem 3rem;
+  }
+
+  .hero,
+  .results-page {
+    width: min(100%, 52rem);
+  }
+
+  .search-form {
+    margin-top: 2.5rem;
+  }
+
+  .search-frame {
+    min-height: 8rem;
+    padding: 1rem 1.1rem 1rem 1.25rem;
+  }
+
+  .suggestion-list {
+    width: min(100%, 24rem);
+    gap: 0.9rem;
+  }
+
+  .suggestion-chip {
+    width: 100%;
+  }
+
+  .results-header-top {
+    align-items: stretch;
+  }
+
+  .doctor-card {
+    padding: 2rem;
+  }
+
+  .doctor-card h2 {
+    font-size: clamp(2rem, 6vw, 3rem);
+  }
+
+  .primary-action {
+    width: 4rem;
+    height: 4rem;
+  }
+}
+
 @media (max-width: 720px) {
   .app-shell {
-    padding-top: 2.25rem;
+    padding: 2.25rem 1rem 2.5rem;
   }
 
   .brand-lockup {
@@ -581,11 +627,12 @@ a {
     max-width: 16ch;
   }
 
-  .search-form {
-    margin-top: 2.2rem;
+  .hero-lede {
+    display: none;
   }
 
   .search-frame {
+    flex-direction: column;
     min-height: 7.2rem;
     padding: 1rem;
     align-items: stretch;
@@ -600,11 +647,19 @@ a {
   }
 
   .suggestion-list {
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.8rem;
   }
 
   .suggestion-chip {
-    width: min(100%, 16rem);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .primary-action {
+    width: 100%;
+    height: 3.2rem;
   }
 
   .doctor-card-header {
@@ -614,6 +669,16 @@ a {
   .results-header-top {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .results-search-frame {
+    min-height: 3.6rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .doctor-card {
+    min-height: 0;
+    padding: 1.5rem;
   }
 
   .doctor-links {

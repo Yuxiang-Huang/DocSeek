@@ -1,5 +1,10 @@
-import { describe, expect, test, vi } from "vitest";
+// @vitest-environment jsdom
+
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
+	ResultsHeader,
+	SearchHero,
 	getDoctorSearchUrl,
 	getNextRecommendationLabel,
 	getResultsNavigation,
@@ -7,6 +12,10 @@ import {
 	SUGGESTED_SYMPTOMS,
 	searchDoctors,
 } from "../components/App";
+
+afterEach(() => {
+	cleanup();
+});
 
 describe("doctor search helpers", () => {
 	test("builds the doctor search endpoint from the API base URL", () => {
@@ -93,5 +102,50 @@ describe("frontend page flow", () => {
 				symptoms: "migraines",
 			},
 		});
+	});
+
+	test("renders the landing hero with the responsive helper copy hook", () => {
+		render(
+			<SearchHero
+				symptoms=""
+				onSymptomsChange={vi.fn()}
+				onSubmit={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("How can we help you today?")).toBeTruthy();
+		expect(
+			screen.getByText(
+				/Describe what you are feeling and DocSeek will surface the strongest/i,
+			).className,
+		).toContain("hero-lede");
+		expect(document.querySelector(".suggestion-list")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Migraines" })).toBeTruthy();
+	});
+
+	test("uses the suggested tags to request a symptom update", () => {
+		const onSymptomsChange = vi.fn();
+
+		render(
+			<SearchHero
+				symptoms=""
+				onSymptomsChange={onSymptomsChange}
+				onSubmit={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "MRI scan" }));
+
+		expect(onSymptomsChange).toHaveBeenCalledWith("MRI scan");
+	});
+
+	test("renders the results header summary for compact layouts", () => {
+		render(
+			<ResultsHeader includeBackLink={false} initialSymptoms="persistent cough" />,
+		);
+
+		expect(screen.getByText("Recommended doctors")).toBeTruthy();
+		expect(screen.getByText("persistent cough")).toBeTruthy();
+		expect(document.querySelector(".results-header-top")).toBeTruthy();
 	});
 });
