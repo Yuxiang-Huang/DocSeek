@@ -80,6 +80,22 @@ def ensure_specialty_search_rows(conn: psycopg.Connection[Any]) -> None:
             )
 
 
+def reset_specialty_embeddings(
+    conn: psycopg.Connection[Any],
+) -> None:
+    with conn.transaction():
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE doctor_search_embeddings
+                SET embedding = NULL,
+                    embedding_model = NULL,
+                    updated_at = NOW()
+                WHERE source_field = 'specialty'
+                """
+            )
+
+
 def fetch_pending_rows(
     conn: psycopg.Connection[Any],
     model: str,
@@ -147,6 +163,8 @@ def populate_specialty_embeddings(
 ) -> int:
     ensure_schema(conn)
     ensure_specialty_search_rows(conn)
+    if force:
+        reset_specialty_embeddings(conn)
 
     total_processed = 0
     remaining = limit
@@ -156,7 +174,7 @@ def populate_specialty_embeddings(
         if current_limit <= 0:
             break
 
-        rows = fetch_pending_rows(conn, model=model, limit=current_limit, force=force)
+        rows = fetch_pending_rows(conn, model=model, limit=current_limit, force=False)
         if not rows:
             print("No more pending rows to process.")
             break

@@ -9,7 +9,7 @@ services:
     ports:
       - "55432:5432"
     volumes:
-      - ./data-scripts/.docker-postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./data-scripts/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U docseek -d docseek_upmc"]
@@ -52,6 +52,7 @@ services:
       - bun_install_cache:/root/.bun/install/cache
 
 volumes:
+  postgres_data:
   api_node_modules:
   client_node_modules:
   bun_install_cache:

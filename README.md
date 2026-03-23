@@ -17,6 +17,16 @@ docker compose up
 
 The Postgres container uses the `pgvector` image. Fresh Docker database initialization and the data script schema bootstrap both enable the `vector` extension automatically.
 
+If you previously used the older repo-local Postgres data directory and see a collation version mismatch warning on startup, reset the local database once:
+
+```bash
+docker compose down -v
+rm -rf data-scripts/.docker-postgres
+docker compose up
+```
+
+That warning comes from reusing a PostgreSQL data directory created under a different base image/libc collation version.
+
 Create a root `.env` from `.env.example` for shared local settings such as `DATABASE_URL`, `OPENAI_API_KEY`, and `OPENAI_EMBEDDING_MODEL`.
 
 Service endpoints:
