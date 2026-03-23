@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from main import (
     SCHEMA_FILE,
     CardData,
@@ -6,11 +8,27 @@ from main import (
     normalize_tags,
 )
 
+INIT_PGVECTOR_FILE = SCHEMA_FILE.parent / "init" / "001-enable-pgvector.sql"
+
 
 def test_schema_file_lives_in_postgres_folder() -> None:
     assert SCHEMA_FILE.name == "schema.sql"
     assert SCHEMA_FILE.parent.name == "postgres"
     assert SCHEMA_FILE.is_file()
+
+
+def test_pgvector_init_file_exists() -> None:
+    assert INIT_PGVECTOR_FILE.name == "001-enable-pgvector.sql"
+    assert INIT_PGVECTOR_FILE.parent.name == "init"
+    assert INIT_PGVECTOR_FILE.is_file()
+
+
+def test_schema_enables_pgvector_extension() -> None:
+    schema = SCHEMA_FILE.read_text(encoding="utf-8")
+    init_sql = INIT_PGVECTOR_FILE.read_text(encoding="utf-8")
+
+    assert "CREATE EXTENSION IF NOT EXISTS vector;" in schema
+    assert "CREATE EXTENSION IF NOT EXISTS vector;" in init_sql
 
 
 def test_extract_card_data_reads_name_specialty_tags_and_ratings_link() -> None:

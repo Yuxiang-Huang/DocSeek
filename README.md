@@ -15,6 +15,8 @@ From the repo root you can start Postgres, the API, and the client together with
 docker compose up
 ```
 
+The Postgres container uses the `pgvector` image. Fresh Docker database initialization and the scraper schema bootstrap both enable the `vector` extension automatically.
+
 Service endpoints:
 
 - `client`: `http://localhost:5173`

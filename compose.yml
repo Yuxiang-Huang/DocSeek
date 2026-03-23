@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16
+    image: pgvector/pgvector:pg16
     container_name: docseek-upmc-postgres
     environment:
       POSTGRES_USER: docseek
@@ -10,6 +10,7 @@ services:
       - "55432:5432"
     volumes:
       - ./scraper/.docker-postgres:/var/lib/postgresql/data
+      - ./scraper/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U docseek -d docseek_upmc"]
       interval: 5s
