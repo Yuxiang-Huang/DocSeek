@@ -505,6 +505,29 @@ a {
 	font-weight: 500;
 }
 
+.match-reason {
+	margin-top: 1.35rem;
+	padding: 1rem 1.25rem;
+	border-radius: 1rem;
+	border: 1px solid rgba(32, 216, 255, 0.16);
+	background: rgba(14, 26, 60, 0.5);
+}
+
+.match-reason-label {
+	margin: 0 0 0.3rem;
+	color: rgba(147, 193, 229, 0.78);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+}
+
+.match-reason-text {
+	margin: 0;
+	color: var(--text-soft);
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
 .doctor-details {
 	display: grid;
 	gap: 0.85rem;

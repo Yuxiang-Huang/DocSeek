@@ -17,6 +17,8 @@ type DoctorRow = {
 	primary_location: string | null;
 	primary_phone: string | null;
 	created_at: string;
+	match_score: number;
+	matched_specialty: string | null;
 };
 
 type EmbeddingsResponse = {
@@ -101,7 +103,9 @@ export function createDoctorSearchService(
 		const vectorLiteral = formatVectorLiteral(embedding);
 
 		const rows = await sql<DoctorRow[]>`
-			SELECT d.*
+			SELECT d.*,
+				1 - (dse.embedding <=> ${vectorLiteral}::vector) AS match_score,
+				REPLACE(dse.content, 'Specialty: ', '') AS matched_specialty
 			FROM doctor_search_embeddings dse
 			INNER JOIN doctors d ON d.id = dse.doctor_id
 			WHERE dse.embedding IS NOT NULL

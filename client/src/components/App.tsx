@@ -20,6 +20,8 @@ export type Doctor = {
 	book_appointment_url: string | null;
 	primary_location: string | null;
 	primary_phone: string | null;
+	match_score: number | null;
+	matched_specialty: string | null;
 };
 
 type DoctorSearchResponse = {
@@ -311,6 +313,15 @@ export function DoctorRecommendationCard({
 			<p className="doctor-meta">
 				{activeDoctor.primary_specialty ?? "Specialty not listed"}
 			</p>
+			{activeDoctor.matched_specialty ? (
+				<div className="match-reason">
+					<p className="match-reason-label">Why recommended</p>
+					<p className="match-reason-text">
+						Matched based on specialty in{" "}
+						<strong>{activeDoctor.matched_specialty.replace(/;/g, ",")}</strong>
+					</p>
+				</div>
+			) : null}
 			<div className="doctor-details">
 				<p className="doctor-detail">
 					{activeDoctor.primary_location ?? "Location not listed"}
