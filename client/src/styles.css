@@ -513,19 +513,55 @@ a {
 	background: rgba(14, 26, 60, 0.5);
 }
 
+.match-reason-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-bottom: 0.6rem;
+}
+
 .match-reason-label {
-	margin: 0 0 0.3rem;
+	margin: 0;
 	color: rgba(147, 193, 229, 0.78);
 	font-size: 0.75rem;
 	text-transform: uppercase;
 	letter-spacing: 0.1em;
 }
 
+.match-quality-badge {
+	padding: 0.25rem 0.75rem;
+	border-radius: 999px;
+	border: 1px solid rgba(32, 216, 255, 0.28);
+	background: rgba(20, 40, 90, 0.6);
+	color: var(--teal);
+	font-size: 0.78rem;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
 .match-reason-text {
+	margin: 0 0 0.5rem;
+	color: var(--text-muted);
+	font-size: 0.9rem;
+}
+
+.match-specialty-list {
 	margin: 0;
-	color: var(--text-soft);
-	font-size: 1rem;
-	line-height: 1.5;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.match-specialty-item {
+	padding: 0.3rem 0.8rem;
+	border-radius: 999px;
+	border: 1px solid rgba(76, 141, 255, 0.28);
+	background: rgba(22, 38, 84, 0.6);
+	color: #a9dfff;
+	font-size: 0.92rem;
 }
 
 .doctor-details {

@@ -96,6 +96,21 @@ export function getNextRecommendationLabel(hasNextDoctor: boolean) {
 		: "You've reached the last recommendation";
 }
 
+export function getMatchQualityLabel(score: number | null): string {
+	if (score === null) return "Possible match";
+	if (score >= 0.55) return "Strong match";
+	if (score >= 0.4) return "Good match";
+	return "Possible match";
+}
+
+export function formatMatchedSpecialties(matched: string | null): string[] {
+	if (!matched) return [];
+	return matched
+		.split(";")
+		.map((s) => s.trim())
+		.filter(Boolean);
+}
+
 export async function searchDoctors(
 	symptoms: string,
 	{ apiBaseUrl = API_BASE_URL, fetchImpl = fetch }: SearchDoctorsOptions = {},
@@ -315,11 +330,24 @@ export function DoctorRecommendationCard({
 			</p>
 			{activeDoctor.matched_specialty ? (
 				<div className="match-reason">
-					<p className="match-reason-label">Why recommended</p>
+					<div className="match-reason-header">
+						<p className="match-reason-label">Why recommended</p>
+						<span className="match-quality-badge">
+							{getMatchQualityLabel(activeDoctor.match_score)}
+						</span>
+					</div>
 					<p className="match-reason-text">
-						Matched based on specialty in{" "}
-						<strong>{activeDoctor.matched_specialty.replace(/;/g, ",")}</strong>
+						This doctor specializes in:
 					</p>
+					<ul className="match-specialty-list">
+						{formatMatchedSpecialties(activeDoctor.matched_specialty).map(
+							(specialty) => (
+								<li key={specialty} className="match-specialty-item">
+									{specialty}
+								</li>
+							),
+						)}
+					</ul>
 				</div>
 			) : null}
 			<div className="doctor-details">
