@@ -448,7 +448,6 @@ export function HomePage({ navigateToResults }: HomePageProps) {
 				symptoms={symptoms}
 				onSymptomsChange={(value) => {
 					setSymptoms(value);
-					setErrorMessage("");
 				}}
 				onSubmit={handleSubmit}
 				errorMessage={errorMessage}
