@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+dist-ssr/
+.output/
+.nitro/
+.tanstack/
+.vinxi/
+
+# local env and tooling
+.env
+*.local
+.wrangler/
+__unconfig*
+todos.json
+.venv/
+__pycache__/
+.pytest_cache/
+
+# data script runtime data
+data-scripts/.docker-postgres/
+data-scripts/.postgres-data/
+data-scripts/.postgres-log/
+# This should normally be ignored, but we want to keep it in the repo for now since it's small and we don't have a better way to share it.
+# data-scripts/upmc_doctors.json
+
+# system files
+.DS_Store

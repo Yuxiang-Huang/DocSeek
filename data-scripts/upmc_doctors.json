@@ -1,0 +1,681 @@
+[
+  {
+    "source_provider_id": 1466136,
+    "npi": "1083879860",
+    "full_name": "Christopher Aaron, DO",
+    "first_name": "Christopher",
+    "middle_name": "L.",
+    "last_name": "Aaron",
+    "suffix": null,
+    "primary_specialty": "Family Medicine",
+    "accepting_new_patients": true,
+    "profile_url": "https://providers.upmc.com/provider/christopher-l-aaron/1466136",
+    "ratings_url": "https://providers.upmc.com/provider/christopher-aaron/1466136?sort=name&page=1#profile-reviews",
+    "book_appointment_url": "https://myupmc.upmc.com/open-scheduling?id=1806&linksource=findadoc",
+    "primary_location": "792 Gallitzin Road, Cresson, PA, 16630",
+    "primary_phone": "814-886-8161",
+    "age_groups_seen": [
+      "Child",
+      "Adolescent",
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Accepting New Patients",
+      "Online booking",
+      "Video Visit"
+    ],
+    "specialties": [
+      "Family Medicine"
+    ],
+    "hospitals": [
+      "Provider Enrollment and Credentialing",
+      "UPMC Altoona"
+    ],
+    "locations": [
+      {
+        "source_location_id": 5427752,
+        "name": "UPMC Primary Care, Mainline Medical Associates",
+        "street1": "792 Gallitzin Road",
+        "street2": "",
+        "suite": "",
+        "city": "Cresson",
+        "state": "PA",
+        "zip_code": "16630",
+        "phone": "814-886-8161",
+        "rank": 1
+      }
+    ]
+  },
+  {
+    "source_provider_id": 1744538,
+    "npi": "1932538352",
+    "full_name": "Alexis B. Aaronson, CRNP",
+    "first_name": "Alexis",
+    "middle_name": "B",
+    "last_name": "Aaronson",
+    "suffix": null,
+    "primary_specialty": "Palliative Medicine",
+    "accepting_new_patients": true,
+    "profile_url": "https://providers.upmc.com/provider/alexis-b-aaronson/1744538",
+    "ratings_url": "https://providers.upmc.com/provider/alexis-b-aaronson/1744538#profile-reviews",
+    "book_appointment_url": null,
+    "primary_location": "4300 Londonderry Road, Lower Level, Harrisburg, PA, 17109",
+    "primary_phone": "717-988-0611",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Accepting New Patients"
+    ],
+    "specialties": [
+      "Palliative Medicine"
+    ],
+    "hospitals": [
+      "Community",
+      "UPMC Memorial",
+      "UPMC Lititz",
+      "UPMC Hanover",
+      "UPMC Carlisle",
+      "West Shore",
+      "UPMC Pinnacle Harrisburg"
+    ],
+    "locations": [
+      {
+        "source_location_id": 5427700,
+        "name": "UPMC Palliative Medicine",
+        "street1": "4300 Londonderry Road",
+        "street2": "",
+        "suite": "Lower Level",
+        "city": "Harrisburg",
+        "state": "PA",
+        "zip_code": "17109",
+        "phone": "717-988-0611",
+        "rank": 1
+      }
+    ]
+  },
+  {
+    "source_provider_id": 1775608,
+    "npi": "1619900453",
+    "full_name": "Cybele Lara Abad, MD",
+    "first_name": "Cybele",
+    "middle_name": "Lara",
+    "last_name": "Abad",
+    "suffix": null,
+    "primary_specialty": "Infectious Diseases",
+    "accepting_new_patients": true,
+    "profile_url": "https://providers.upmc.com/provider/cybele-lara-abad/1775608",
+    "ratings_url": "https://providers.upmc.com/provider/cybele-lara-abad/1775608#profile-reviews",
+    "book_appointment_url": null,
+    "primary_location": "3601 5th Avenue, Falk Clinic Suite 700, Pittsburgh, PA, 15213",
+    "primary_phone": "412-647-7228",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Accepting New Patients",
+      "Video Visit"
+    ],
+    "specialties": [
+      "Infectious Diseases"
+    ],
+    "hospitals": [
+      "Provider Enrollment and Credentialing",
+      "UPMC Jameson",
+      "UPMC Altoona",
+      "UPMC Horizon",
+      "UPMC Presbyterian",
+      "UPMC Northwest"
+    ],
+    "locations": [
+      {
+        "source_location_id": 6130866,
+        "name": "University of Pittsburgh Physicians, Department of Medicine, Division of Infectious Disease",
+        "street1": "3601 5th Avenue",
+        "street2": "Falk Clinic Suite 700",
+        "suite": "",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip_code": "15213",
+        "phone": "412-647-7228",
+        "rank": 1
+      },
+      {
+        "source_location_id": 6130514,
+        "name": "UPMC Center for Care of Infectious Diseases",
+        "street1": "3601 5th Avenue",
+        "street2": "Falk Medical Building Suite 700",
+        "suite": "",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip_code": "15213",
+        "phone": "412-647-7228",
+        "rank": 2
+      }
+    ]
+  },
+  {
+    "source_provider_id": 1861613,
+    "npi": "1295962546",
+    "full_name": "Jose Francisco Abad, MD",
+    "first_name": "Jose",
+    "middle_name": "Francisco",
+    "last_name": "Abad",
+    "suffix": null,
+    "primary_specialty": "Family Medicine",
+    "accepting_new_patients": true,
+    "profile_url": "https://providers.upmc.com/provider/jose-francisco-abad/1861613",
+    "ratings_url": "https://providers.upmc.com/provider/jose-francisco-abad/1861613?sort=name&page=1#profile-reviews",
+    "book_appointment_url": "https://providers.upmc.com/book/1861613",
+    "primary_location": "5608 Wilkins Avenue, Suite 100, Pittsburgh, PA, 15217",
+    "primary_phone": "412-422-8762",
+    "age_groups_seen": [
+      "Child",
+      "Adolescent",
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Accepting New Patients",
+      "Online booking",
+      "Video Visit"
+    ],
+    "specialties": [
+      "Family Medicine"
+    ],
+    "hospitals": [
+      "UPMC Magee-Women's Hospital",
+      "UPMC McKeesport",
+      "UPMC East",
+      "UPMC St Margaret",
+      "UPMC Shadyside",
+      "UPMC Presbyterian",
+      "Provider Enrollment and Credentialing"
+    ],
+    "locations": [
+      {
+        "source_location_id": 2594096,
+        "name": "Squirrel Hill Family Medicine",
+        "street1": "5608 Wilkins Avenue",
+        "street2": "",
+        "suite": "Suite 100",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip_code": "15217",
+        "phone": "412-422-8762",
+        "rank": 1
+      }
+    ]
+  },
+  {
+    "source_provider_id": 1320934,
+    "npi": "1780767558",
+    "full_name": "Darius Abadi, DO",
+    "first_name": "Darius",
+    "middle_name": null,
+    "last_name": "Abadi",
+    "suffix": null,
+    "primary_specialty": "General Surgery",
+    "accepting_new_patients": true,
+    "profile_url": "https://providers.upmc.com/provider/darius-abadi/1320934",
+    "ratings_url": "https://providers.upmc.com/provider/darius-abadi/1320934?sort=name&page=1#profile-reviews",
+    "book_appointment_url": "https://myupmc.upmc.com/open-scheduling?id=15703&linksource=findadoc",
+    "primary_location": "1 Main Street, Wellsboro, PA, 16901",
+    "primary_phone": "570-723-0716",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Accepting New Patients",
+      "Online booking"
+    ],
+    "specialties": [
+      "General Surgery"
+    ],
+    "hospitals": [
+      "Provider Enrollment and Credentialing",
+      "UPMC Wellsboro"
+    ],
+    "locations": [
+      {
+        "source_location_id": 5427579,
+        "name": "UPMC General Surgery",
+        "street1": "1 Main Street",
+        "street2": "",
+        "suite": "",
+        "city": "Wellsboro",
+        "state": "PA",
+        "zip_code": "16901",
+        "phone": "570-723-0716",
+        "rank": 1
+      }
+    ]
+  },
+  {
+    "source_provider_id": 2678067,
+    "npi": "1215128434",
+    "full_name": "Joseph Michael Abalos, MD",
+    "first_name": "Joseph",
+    "middle_name": "Michael",
+    "last_name": "Abalos",
+    "suffix": null,
+    "primary_specialty": "Hospital Medicine",
+    "accepting_new_patients": false,
+    "profile_url": "https://providers.upmc.com/provider/joseph-michael-abalos/2678067",
+    "ratings_url": "https://providers.upmc.com/provider/joseph-michael-abalos/2678067#profile-reviews",
+    "book_appointment_url": null,
+    "primary_location": "100 Fairfield Drive, Seneca, PA, 16346",
+    "primary_phone": "814-676-7863",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [],
+    "specialties": [
+      "Hospital Medicine"
+    ],
+    "hospitals": [
+      "UPMC Northwest",
+      "Provider Enrollment and Credentialing"
+    ],
+    "locations": [
+      {
+        "source_location_id": 6131634,
+        "name": "UPMC Northwest - Hospitalist Group",
+        "street1": "100 Fairfield Drive",
+        "street2": "",
+        "suite": "",
+        "city": "Seneca",
+        "state": "PA",
+        "zip_code": "16346",
+        "phone": "814-676-7863",
+        "rank": 1
+      },
+      {
+        "source_location_id": 6129742,
+        "name": "Northwest Wound Center",
+        "street1": "6885 US 322",
+        "street2": "",
+        "suite": "Suite 4",
+        "city": "Franklin",
+        "state": "PA",
+        "zip_code": "16323",
+        "phone": "814-678-6913",
+        "rank": 2
+      }
+    ]
+  },
+  {
+    "source_provider_id": 2438626,
+    "npi": "1336589357",
+    "full_name": "Brandan Robert Abati, CRNA",
+    "first_name": "Brandan",
+    "middle_name": "Robert",
+    "last_name": "Abati",
+    "suffix": null,
+    "primary_specialty": "Anesthesiology",
+    "accepting_new_patients": false,
+    "profile_url": "https://providers.upmc.com/provider/brandan-robert-abati/2438626",
+    "ratings_url": "https://providers.upmc.com/provider/brandan-robert-abati/2438626#profile-reviews",
+    "book_appointment_url": null,
+    "primary_location": "9100 Babcock Boulevard, Pittsburgh, PA, 15237",
+    "primary_phone": "412-367-6515",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [],
+    "specialties": [
+      "Anesthesiology"
+    ],
+    "hospitals": [
+      "UPMC Passavant",
+      "Provider Enrollment and Credentialing"
+    ],
+    "locations": [
+      {
+        "source_location_id": 6131254,
+        "name": "University of Pittsburgh Physicians, Department of Anesthesiology",
+        "street1": "9100 Babcock Boulevard",
+        "street2": "",
+        "suite": "",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip_code": "15237",
+        "phone": "412-367-6515",
+        "rank": 1
+      },
+      {
+        "source_location_id": 6131234,
+        "name": "University of Pittsburgh Physicians, Department of Anesthesiology",
+        "street1": "9100 Babcock Boulevard",
+        "street2": "UPMC Passavant",
+        "suite": "",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip_code": "15237",
+        "phone": "412-748-5589",
+        "rank": 2
+      }
+    ]
+  },
+  {
+    "source_provider_id": 6789135,
+    "npi": "1487061438",
+    "full_name": "Hafsa Abbas, MD",
+    "first_name": "Hafsa",
+    "middle_name": null,
+    "last_name": "Abbas",
+    "suffix": null,
+    "primary_specialty": "Gastroenterology",
+    "accepting_new_patients": true,
+    "profile_url": "https://providers.upmc.com/provider/hafsa-abbas/6789135",
+    "ratings_url": "https://providers.upmc.com/provider/hafsa-abbas/6789135#profile-reviews",
+    "book_appointment_url": null,
+    "primary_location": "2035 Technology Parkway, Suite 200, Mechanicsburg, PA, 17050",
+    "primary_phone": "717-988-8567",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Accepting New Patients"
+    ],
+    "specialties": [
+      "Gastroenterology"
+    ],
+    "hospitals": [
+      "UPMC Carlisle",
+      "West Shore",
+      "Community",
+      "UPMC Pinnacle Harrisburg"
+    ],
+    "locations": [
+      {
+        "source_location_id": 3817189,
+        "name": "UPMC Gastroenterology Associates of Central PA",
+        "street1": "2035 Technology Parkway",
+        "street2": "",
+        "suite": "Suite 200",
+        "city": "Mechanicsburg",
+        "state": "PA",
+        "zip_code": "17050",
+        "phone": "717-988-8567",
+        "rank": 1
+      }
+    ]
+  },
+  {
+    "source_provider_id": 1744594,
+    "npi": "1023343779",
+    "full_name": "Ali Abbas, MD",
+    "first_name": "Ali",
+    "middle_name": null,
+    "last_name": "Abbas",
+    "suffix": null,
+    "primary_specialty": "Gastroenterology",
+    "accepting_new_patients": true,
+    "profile_url": "https://providers.upmc.com/provider/ali-abbas/1744594",
+    "ratings_url": "https://providers.upmc.com/provider/ali-abbas/1744594?sort=name&page=1#profile-reviews",
+    "book_appointment_url": "https://myupmc.upmc.com/open-scheduling?id=595&linksource=findadoc",
+    "primary_location": "2690 Southfield Drive, York, PA, 17403",
+    "primary_phone": "717-741-1414",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Accepting New Patients",
+      "Online booking"
+    ],
+    "specialties": [
+      "Gastroenterology"
+    ],
+    "hospitals": [
+      "Community",
+      "UPMC Memorial",
+      "UPMC Hanover",
+      "West Shore",
+      "UPMC Pinnacle Harrisburg"
+    ],
+    "locations": [
+      {
+        "source_location_id": 5426975,
+        "name": "UPMC Gastroenterology Associates",
+        "street1": "2690 Southfield Drive",
+        "street2": "",
+        "suite": "",
+        "city": "York",
+        "state": "PA",
+        "zip_code": "17403",
+        "phone": "717-741-1414",
+        "rank": 1
+      }
+    ]
+  },
+  {
+    "source_provider_id": 1323817,
+    "npi": "1710140298",
+    "full_name": "Rime Abbas, MD",
+    "first_name": "Rime",
+    "middle_name": "Tahsin",
+    "last_name": "Abbas",
+    "suffix": null,
+    "primary_specialty": "Pulmonology",
+    "accepting_new_patients": true,
+    "profile_url": "https://providers.upmc.com/provider/rime-tahsin-abbas/1323817",
+    "ratings_url": "https://providers.upmc.com/provider/rime-abbas/1323817?sort=name&page=1#profile-reviews",
+    "book_appointment_url": "https://providers.upmc.com/book/1323817",
+    "primary_location": "1400 Locust Street, Suite 5121, Pittsburgh, PA, 15219",
+    "primary_phone": "412-232-5665",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Accepting New Patients",
+      "Online booking",
+      "Video Visit"
+    ],
+    "specialties": [
+      "Pulmonology"
+    ],
+    "hospitals": [
+      "Provider Enrollment and Credentialing",
+      "UPMC Mercy",
+      "UPMC Presbyterian",
+      "UPMC East"
+    ],
+    "locations": [
+      {
+        "source_location_id": 2598397,
+        "name": "Lung Nodule Multi-Specialty Clinic-Mercy",
+        "street1": "1400 Locust Street",
+        "street2": "",
+        "suite": "Suite 5121",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip_code": "15219",
+        "phone": "412-232-5665",
+        "rank": 1
+      },
+      {
+        "source_location_id": 2593551,
+        "name": "UPMC Comprehensive Lung Center - Falk",
+        "street1": "3601 5th Avenue",
+        "street2": "",
+        "suite": "Floor 4",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip_code": "15213",
+        "phone": "412-648-6161",
+        "rank": 2
+      }
+    ]
+  },
+  {
+    "source_provider_id": 1322179,
+    "npi": "1518925437",
+    "full_name": "Israr A. Abbasi, MD",
+    "first_name": "Israr",
+    "middle_name": "A",
+    "last_name": "Abbasi",
+    "suffix": null,
+    "primary_specialty": "Psychiatry",
+    "accepting_new_patients": false,
+    "profile_url": "https://providers.upmc.com/provider/israr-a-abbasi/1322179",
+    "ratings_url": "https://providers.upmc.com/provider/israr-a-abbasi/1322179#profile-reviews",
+    "book_appointment_url": null,
+    "primary_location": "51 Glasgow Avenue, Jamestown, NY, 14701",
+    "primary_phone": "716-664-8641",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Video Visit"
+    ],
+    "specialties": [
+      "Psychiatry"
+    ],
+    "hospitals": [
+      "Provider Enrollment and Credentialing",
+      "UPMC Chautauqua"
+    ],
+    "locations": [
+      {
+        "source_location_id": 6128556,
+        "name": "UPMC Outpatient Behavioral Health Clinic",
+        "street1": "51 Glasgow Avenue",
+        "street2": "",
+        "suite": "",
+        "city": "Jamestown",
+        "state": "NY",
+        "zip_code": "14701",
+        "phone": "716-664-8641",
+        "rank": 1
+      },
+      {
+        "source_location_id": 6128555,
+        "name": "Chautauqua Residential Treatment Program",
+        "street1": "51 Glasgow Avenue",
+        "street2": "",
+        "suite": "",
+        "city": "Jamestown",
+        "state": "NY",
+        "zip_code": "14701",
+        "phone": "716-664-8323",
+        "rank": 2
+      },
+      {
+        "source_location_id": 6128545,
+        "name": "Dunkirk Outpatient Behavioral Health Clinic",
+        "street1": "306 Central Avenue",
+        "street2": "",
+        "suite": "",
+        "city": "Dunkirk",
+        "state": "NY",
+        "zip_code": "14048",
+        "phone": "716-338-0018",
+        "rank": 3
+      },
+      {
+        "source_location_id": 6128560,
+        "name": "Chautauqua Chemical Dependency Unit",
+        "street1": "207 Foote Avenue",
+        "street2": "",
+        "suite": "",
+        "city": "Jamestown",
+        "state": "NY",
+        "zip_code": "14701",
+        "phone": "716-664-8620",
+        "rank": 4
+      },
+      {
+        "source_location_id": 6128559,
+        "name": "Chautauqua Inpatient Mental Health Unit",
+        "street1": "207 Foote Avenue",
+        "street2": "",
+        "suite": "",
+        "city": "Jamestown",
+        "state": "NY",
+        "zip_code": "14701",
+        "phone": "716-664-8640",
+        "rank": 5
+      }
+    ]
+  },
+  {
+    "source_provider_id": 4226240,
+    "npi": "1639525678",
+    "full_name": "Nicholas M. Abbott, DO",
+    "first_name": "Nicholas",
+    "middle_name": "Murdock",
+    "last_name": "Abbott",
+    "suffix": null,
+    "primary_specialty": "Internal Medicine",
+    "accepting_new_patients": true,
+    "profile_url": "https://providers.upmc.com/provider/nicholas-murdock-abbott/4226240",
+    "ratings_url": "https://providers.upmc.com/provider/nicholas-murdock-abbott/4226240#profile-reviews",
+    "book_appointment_url": null,
+    "primary_location": "2000 Memorial Drive, Farrell, PA, 16121",
+    "primary_phone": "724-528-2513",
+    "age_groups_seen": [
+      "Adult",
+      "Older Adult"
+    ],
+    "tags": [
+      "Accepting New Patients"
+    ],
+    "specialties": [
+      "Internal Medicine"
+    ],
+    "hospitals": [
+      "UPMC Horizon",
+      "UPMC Jameson",
+      "Provider Enrollment and Credentialing"
+    ],
+    "locations": [
+      {
+        "source_location_id": 6131544,
+        "name": "Shenango Valley Family Medicine Center - UPMC",
+        "street1": "2000 Memorial Drive",
+        "street2": "",
+        "suite": "",
+        "city": "Farrell",
+        "state": "PA",
+        "zip_code": "16121",
+        "phone": "724-528-2513",
+        "rank": 1
+      },
+      {
+        "source_location_id": 6129622,
+        "name": "UPMC Jameson",
+        "street1": "1211 Wilmington Avenue",
+        "street2": "",
+        "suite": "",
+        "city": "New Castle",
+        "state": "PA",
+        "zip_code": "16105",
+        "phone": "724-658-9001",
+        "rank": 2
+      },
+      {
+        "source_location_id": 6131528,
+        "name": "University of Pittsburgh Physicians, Department of Critical Care Medicine",
+        "street1": "1211 Wilmington Avenue",
+        "street2": "Jameson Hospital",
+        "suite": "",
+        "city": "New Castle",
+        "state": "PA",
+        "zip_code": "16105",
+        "phone": "724-658-9001",
+        "rank": 3
+      }
+    ]
+  }
+]
