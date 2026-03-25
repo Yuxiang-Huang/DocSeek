@@ -1,6 +1,8 @@
+import { querySearchDoctors } from "./queries";
+
 const DEFAULT_RESULT_LIMIT = 10;
 
-type DoctorRow = {
+export type DoctorRow = {
 	id: number;
 	source_provider_id: number;
 	npi: string | null;
@@ -17,6 +19,8 @@ type DoctorRow = {
 	primary_location: string | null;
 	primary_phone: string | null;
 	created_at: string;
+	latitude: number | null;
+	longitude: number | null;
 };
 
 type EmbeddingsResponse = {
@@ -100,14 +104,7 @@ export function createDoctorSearchService(
 		const embedding = await requestEmbedding(symptoms, config);
 		const vectorLiteral = formatVectorLiteral(embedding);
 
-		const rows = await sql<DoctorRow[]>`
-			SELECT d.*
-			FROM doctor_search_embeddings dse
-			INNER JOIN doctors d ON d.id = dse.doctor_id
-			WHERE dse.embedding IS NOT NULL
-			ORDER BY dse.embedding <=> ${vectorLiteral}::vector
-			LIMIT ${limit}
-		`;
+		const rows = await querySearchDoctors(sql, vectorLiteral, limit);
 
 		return rows;
 	};

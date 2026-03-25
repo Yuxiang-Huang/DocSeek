@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Search, Stethoscope } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { calculateDistance, formatDistance } from "../utils/distance";
 
 const API_BASE_URL =
 	import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
@@ -20,6 +21,13 @@ export type Doctor = {
 	book_appointment_url: string | null;
 	primary_location: string | null;
 	primary_phone: string | null;
+	latitude: number | null;
+	longitude: number | null;
+};
+
+type UserLocation = {
+	latitude: number;
+	longitude: number;
 };
 
 type DoctorSearchResponse = {
@@ -81,6 +89,7 @@ type DoctorRecommendationCardProps = {
 	doctors: Doctor[];
 	activeDoctorIndex: number;
 	onNextDoctor: () => void;
+	userLocation: UserLocation | null;
 };
 
 type ResultsHeaderProps = {
@@ -545,9 +554,22 @@ export function DoctorRecommendationCard({
 	doctors,
 	activeDoctorIndex,
 	onNextDoctor,
+	userLocation,
 }: DoctorRecommendationCardProps) {
 	const activeDoctor = doctors[activeDoctorIndex];
 	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
+
+	const distanceLabel =
+		userLocation && activeDoctor?.latitude != null && activeDoctor?.longitude != null
+			? formatDistance(
+					calculateDistance(
+						userLocation.latitude,
+						userLocation.longitude,
+						activeDoctor.latitude,
+						activeDoctor.longitude,
+					),
+				)
+			: null;
 
 	if (!activeDoctor) {
 		return null;
@@ -580,6 +602,9 @@ export function DoctorRecommendationCard({
 			<div className="doctor-details">
 				<p className="doctor-detail">
 					{activeDoctor.primary_location ?? "Location not listed"}
+					{distanceLabel ? (
+						<span className="distance-label"> · {distanceLabel}</span>
+					) : null}
 				</p>
 				<p className="doctor-detail">
 					{activeDoctor.primary_phone ?? "Phone number not listed"}
@@ -675,6 +700,18 @@ export function ResultsPage({
 	const [activeDoctorIndex, setActiveDoctorIndex] = useState(0);
 	const [errorMessage, setErrorMessage] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+
+	useEffect(() => {
+		navigator.geolocation.getCurrentPosition(
+			(pos) =>
+				setUserLocation({
+					latitude: pos.coords.latitude,
+					longitude: pos.coords.longitude,
+				}),
+			() => {},
+		);
+	}, []);
 
 	useEffect(() => {
 		let ignore = false;
@@ -761,6 +798,7 @@ export function ResultsPage({
 						onNextDoctor={() =>
 							setActiveDoctorIndex((currentIndex) => currentIndex + 1)
 						}
+						userLocation={userLocation}
 					/>
 				) : null}
 			</section>

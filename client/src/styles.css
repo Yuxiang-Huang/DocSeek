@@ -516,6 +516,9 @@ a {
 	font-size: 1.08rem;
 }
 
+.distance-label {
+	color: var(--teal);
+	font-size: 0.95rem;
 .feedback-section {
 	margin-top: 1.75rem;
 	padding-top: 1.5rem;
