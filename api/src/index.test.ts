@@ -191,4 +191,75 @@ describe("DocSeek API", () => {
 			error: "limit must be a positive integer",
 		});
 	});
+
+	test("returns the symptom validation result", async () => {
+		const app = createApp({
+			symptomValidationService: async ({ symptoms, history }) => {
+				expect(symptoms).toBe("migraine with nausea");
+				expect(history).toEqual([
+					{
+						role: "user",
+						content: "headache",
+					},
+					{
+						role: "assistant",
+						content: "Please describe where the pain is and any other symptoms.",
+					},
+				]);
+				return {
+					isDescriptiveEnough: true,
+				};
+			},
+		});
+
+		const response = await app.request("http://localhost/symptoms/validate", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				symptoms: "migraine with nausea",
+				history: [
+					{
+						role: "user",
+						content: "headache",
+					},
+					{
+						role: "assistant",
+						content: "Please describe where the pain is and any other symptoms.",
+					},
+				],
+			}),
+		});
+		const body = await response.json();
+
+		expect(response.status).toBe(200);
+		expect(body).toEqual({
+			isDescriptiveEnough: true,
+		});
+	});
+
+	test("rejects symptom validation requests without symptoms", async () => {
+		const app = createApp({
+			symptomValidationService: async () => {
+				throw new Error("validation service should not be called");
+			},
+		});
+
+		const response = await app.request("http://localhost/symptoms/validate", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				symptoms: "   ",
+			}),
+		});
+		const body = await response.json();
+
+		expect(response.status).toBe(400);
+		expect(body).toEqual({
+			error: "symptoms must be a non-empty string",
+		});
+	});
 });

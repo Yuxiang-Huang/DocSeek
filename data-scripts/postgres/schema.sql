@@ -49,7 +49,9 @@ CREATE TABLE IF NOT EXISTS locations (
     city TEXT,
     state TEXT,
     zip_code TEXT,
-    phone TEXT
+    phone TEXT,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION
 );
 
 CREATE TABLE IF NOT EXISTS doctor_hospitals (
@@ -82,6 +84,14 @@ CREATE TABLE IF NOT EXISTS doctor_locations (
     rank INTEGER,
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (doctor_id, location_id)
+);
+
+CREATE TABLE IF NOT EXISTS feedback (
+    id BIGSERIAL PRIMARY KEY,
+    doctor_id BIGINT NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS doctor_search_embeddings (

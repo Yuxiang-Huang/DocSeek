@@ -432,6 +432,61 @@ a {
 	text-align: left;
 }
 
+.emergency-care-alert {
+	display: flex;
+	gap: 1rem;
+	align-items: flex-start;
+	width: min(48rem, 100%);
+	margin: 1.35rem auto 0;
+	padding: 1.1rem 1.2rem;
+	border: 1px solid rgba(255, 120, 100, 0.45);
+	border-radius: 1rem;
+	background: linear-gradient(
+		135deg,
+		rgba(120, 24, 36, 0.55) 0%,
+		rgba(60, 12, 40, 0.65) 100%
+	);
+	color: #ffe8ec;
+	text-align: left;
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.04),
+		0 12px 32px rgba(8, 4, 16, 0.45);
+}
+
+.emergency-care-alert-icon {
+	flex: 0 0 auto;
+	color: #ffb4a8;
+	line-height: 0;
+}
+
+.emergency-care-alert-body {
+	min-width: 0;
+}
+
+.emergency-care-alert-title {
+	margin: 0 0 0.45rem;
+	font-size: 1.12rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	color: #fff;
+}
+
+.emergency-care-alert-text {
+	margin: 0;
+	font-size: 0.98rem;
+	line-height: 1.45;
+	color: rgba(255, 232, 236, 0.94);
+}
+
+.emergency-care-alert-text strong {
+	font-weight: 700;
+	color: #fff;
+}
+
+.results-page .emergency-care-alert {
+	margin: 1rem 0 0;
+}
+
 .loading-message {
 	width: min(48rem, 100%);
 	margin: 1.35rem 0 0;
@@ -762,6 +817,76 @@ a {
 .doctor-detail {
 	color: var(--text-soft);
 	font-size: 1.08rem;
+}
+
+.distance-label {
+	color: var(--teal);
+	font-size: 0.95rem;
+.feedback-section {
+	margin-top: 1.75rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--line);
+}
+
+.feedback-section-label {
+	margin: 0 0 0.75rem;
+	color: rgba(147, 193, 229, 0.78);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+}
+
+.feedback-thanks {
+	margin: 0;
+	color: #8fffd3;
+	font-size: 1rem;
+}
+
+.feedback-form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.star-row {
+	display: flex;
+	gap: 0.4rem;
+}
+
+.star-btn {
+	background: none;
+	border: none;
+	font-size: 1.8rem;
+	color: rgba(144, 173, 205, 0.4);
+	cursor: pointer;
+	padding: 0;
+	line-height: 1;
+	transition: color 120ms ease;
+}
+
+.star-btn-active {
+	color: var(--teal);
+}
+
+.feedback-comment {
+	width: 100%;
+	padding: 0.7rem 0.9rem;
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+	background: rgba(14, 26, 60, 0.5);
+	color: var(--text);
+	font: inherit;
+	resize: vertical;
+}
+
+.feedback-comment::placeholder {
+	color: var(--text-muted);
+}
+
+.feedback-error {
+	margin: 0;
+	color: var(--danger);
+	font-size: 0.9rem;
 }
 
 .doctor-links {

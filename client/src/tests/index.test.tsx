@@ -4,17 +4,25 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
 	DoctorRecommendationCard,
+	EmergencyCareAlert,
 	getDoctorSearchUrl,
 	getNextRecommendationLabel,
 	getResultsNavigation,
+	getSymptomValidationUrl,
 	normalizeSymptoms,
+<<<<<<< feature/saved-physicians
 	ResultsActiveFilters,
+=======
+	resolveSymptomsSubmission,
+>>>>>>> main
 	ResultsHeader,
 	SearchFiltersForm,
 	SearchHero,
 	SearchPageShell,
 	SUGGESTED_SYMPTOMS,
 	searchDoctors,
+	symptomsSuggestEmergencyCare,
+	validateSymptomsForDoctorSearch,
 } from "../components/App";
 
 afterEach(() => {
@@ -83,6 +91,52 @@ describe("doctor search helpers", () => {
 		]);
 	});
 
+	test("calls the backend symptom validation endpoint", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({
+				isDescriptiveEnough: false,
+				reasoning: "Describe the symptom you are feeling, not only the test.",
+			}),
+		});
+
+		expect(getSymptomValidationUrl("http://localhost:3000")).toBe(
+			"http://localhost:3000/symptoms/validate",
+		);
+
+		await expect(
+			validateSymptoms("MRI scan", {
+				apiBaseUrl: "http://localhost:3000",
+				fetchImpl: fetchMock as typeof fetch,
+				history: [
+					{
+						role: "user",
+						content: "headache",
+					},
+				],
+			}),
+		).resolves.toEqual({
+			isDescriptiveEnough: false,
+			reasoning: "Describe the symptom you are feeling, not only the test.",
+		});
+
+		expect(fetchMock).toHaveBeenCalledWith(
+			"http://localhost:3000/symptoms/validate",
+			expect.objectContaining({
+				method: "POST",
+				body: JSON.stringify({
+					symptoms: "MRI scan",
+					history: [
+						{
+							role: "user",
+							content: "headache",
+						},
+					],
+				}),
+			}),
+		);
+	});
+
 	test("uses the improved next suggestion label", () => {
 		expect(getNextRecommendationLabel(true)).toBe(
 			"See the next recommended doctor",
@@ -95,9 +149,41 @@ describe("doctor search helpers", () => {
 	test("exposes the quick symptom suggestions in the designed order", () => {
 		expect(SUGGESTED_SYMPTOMS).toEqual(["Migraines", "MRI scan", "Broken leg"]);
 	});
+
+	test("detects common emergency symptom phrases", () => {
+		expect(symptomsSuggestEmergencyCare("chest pain")).toBe(true);
+		expect(symptomsSuggestEmergencyCare("Chest Pain")).toBe(true);
+		expect(symptomsSuggestEmergencyCare("severe headache")).toBe(false);
+		expect(symptomsSuggestEmergencyCare("worst headache of my life")).toBe(
+			true,
+		);
+	});
+
+	test("blocks doctor search navigation when validation finds emergency symptoms", () => {
+		const blocked = validateSymptomsForDoctorSearch("chest pain");
+		expect(blocked.ok).toBe(false);
+		if (!blocked.ok) {
+			expect(blocked.message).toMatch(/emergency care/i);
+		}
+
+		const allowed = validateSymptomsForDoctorSearch("migraines");
+		expect(allowed).toEqual({ ok: true, normalized: "migraines" });
+	});
 });
 
 describe("frontend page flow", () => {
+	test("shows the emergency alert when symptom text may need urgent care", () => {
+		render(
+			<SearchHero
+				symptoms="chest pain"
+				onSymptomsChange={vi.fn()}
+				onSubmit={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByRole("alert").textContent).toMatch(/911/);
+	});
+
 	test("normalizes symptom input before navigating to the results page", () => {
 		expect(normalizeSymptoms("  migraines  ")).toBe("migraines");
 		expect(getResultsNavigation("  migraines  ")).toEqual({
@@ -108,6 +194,7 @@ describe("frontend page flow", () => {
 		});
 	});
 
+<<<<<<< feature/saved-physicians
 	test("getResultsNavigation includes filter params when provided", () => {
 		expect(
 			getResultsNavigation("migraines", {
@@ -149,6 +236,14 @@ describe("frontend page flow", () => {
 				}),
 			}),
 		);
+=======
+	test("renders the emergency care alert component", () => {
+		render(<EmergencyCareAlert />);
+
+		const alert = screen.getByRole("alert");
+		expect(alert.textContent).toMatch(/911/);
+		expect(alert.textContent).toMatch(/emergency room/i);
+>>>>>>> main
 	});
 
 	test("renders the landing hero with the responsive helper copy hook", () => {
@@ -199,6 +294,143 @@ describe("frontend page flow", () => {
 		fireEvent.click(screen.getByRole("button", { name: "MRI scan" }));
 
 		expect(onSymptomsChange).toHaveBeenCalledWith("MRI scan");
+	});
+
+	test("shows the validation feedback under the symptoms input", () => {
+		render(
+			<SearchHero
+				symptoms="MRI scan"
+				onSymptomsChange={vi.fn()}
+				onSubmit={vi.fn()}
+				errorMessage="Describe the symptom you are feeling, not only the test."
+			/>,
+		);
+
+		expect(
+			screen.getByText(
+				"Describe the symptom you are feeling, not only the test.",
+			),
+		).toBeTruthy();
+		expect(
+			screen
+				.getByRole("textbox", { name: "Current symptoms" })
+				.getAttribute("aria-describedby"),
+		).toBe("symptoms-validation-message");
+	});
+
+	test("blocks navigation when the symptom description is too vague", async () => {
+		const validateSymptomsImpl = vi.fn().mockResolvedValue({
+			isDescriptiveEnough: false,
+			reasoning: "Add the symptom you are experiencing, not just the test.",
+		});
+
+		await expect(
+			resolveSymptomsSubmission("MRI scan", {
+				validateSymptomsImpl,
+			}),
+		).resolves.toEqual({
+			canNavigate: false,
+			errorMessage: "Add the symptom you are experiencing, not just the test.",
+			nextAttemptCount: 1,
+			nextValidationHistory: [
+				{
+					role: "user",
+					content: "MRI scan",
+				},
+				{
+					role: "assistant",
+					content: "Add the symptom you are experiencing, not just the test.",
+				},
+			],
+		});
+
+		expect(validateSymptomsImpl).toHaveBeenCalledWith("MRI scan", {
+			history: [],
+		});
+	});
+
+	test("navigates when the symptom description is descriptive enough", async () => {
+		await expect(
+			resolveSymptomsSubmission("  persistent headaches and dizziness  ", {
+				validateSymptomsImpl: vi.fn().mockResolvedValue({
+					isDescriptiveEnough: true,
+				}),
+			}),
+		).resolves.toEqual({
+			canNavigate: true,
+			symptoms: "persistent headaches and dizziness",
+			nextAttemptCount: 0,
+			nextValidationHistory: [],
+		});
+	});
+
+	test("keeps the empty symptom guidance ahead of model validation", async () => {
+		const validateSymptomsImpl = vi.fn();
+
+		await expect(
+			resolveSymptomsSubmission("   ", {
+				validateSymptomsImpl,
+			}),
+		).resolves.toEqual({
+			canNavigate: false,
+			errorMessage: "Enter your current symptoms to search for matching doctors.",
+			nextAttemptCount: 0,
+			nextValidationHistory: [],
+		});
+
+		expect(validateSymptomsImpl).not.toHaveBeenCalled();
+	});
+
+	test("includes prior symptom attempts and prior feedback in later validation calls", async () => {
+		const validateSymptomsImpl = vi.fn().mockResolvedValue({
+			isDescriptiveEnough: false,
+			reasoning: "Name the symptom itself and any related issue.",
+		});
+
+		await resolveSymptomsSubmission("need MRI", {
+			attemptCount: 1,
+			validationHistory: [
+				{
+					role: "user",
+					content: "headache",
+				},
+				{
+					role: "assistant",
+					content: "Describe where it hurts and anything else you feel.",
+				},
+			],
+			validateSymptomsImpl,
+		});
+
+		expect(validateSymptomsImpl).toHaveBeenCalledWith("need MRI", {
+			history: [
+				{
+					role: "user",
+					content: "headache",
+				},
+				{
+					role: "assistant",
+					content: "Describe where it hurts and anything else you feel.",
+				},
+			],
+		});
+	});
+
+	test("allows navigation after the third failed validation", async () => {
+		await expect(
+			resolveSymptomsSubmission("MRI scan", {
+				attemptCount: 2,
+				validateSymptomsImpl: vi.fn().mockResolvedValue({
+					isDescriptiveEnough: false,
+					reasoning: "Please add the symptom you are having.",
+				}),
+			}),
+		).resolves.toEqual({
+			canNavigate: true,
+			symptoms: "MRI scan",
+			nextAttemptCount: 0,
+			nextValidationHistory: [],
+		});
 	});
 
 	test("renders the results header summary for compact layouts", () => {

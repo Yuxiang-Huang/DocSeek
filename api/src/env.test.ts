@@ -62,6 +62,7 @@ describe("API env", () => {
 			openAiApiKey: "configured-key",
 			openAiBaseUrl: "https://example.com/v1",
 			openAiEmbeddingModel: "text-embedding-3-large",
+			openAiValidationModel: "gpt-4.1-mini",
 		});
 	});
 });
