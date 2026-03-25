@@ -49,7 +49,9 @@ CREATE TABLE IF NOT EXISTS locations (
     city TEXT,
     state TEXT,
     zip_code TEXT,
-    phone TEXT
+    phone TEXT,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION
 );
 
 CREATE TABLE IF NOT EXISTS doctor_hospitals (

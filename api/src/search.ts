@@ -17,6 +17,8 @@ type DoctorRow = {
 	primary_location: string | null;
 	primary_phone: string | null;
 	created_at: string;
+	latitude: number | null;
+	longitude: number | null;
 };
 
 type EmbeddingsResponse = {
@@ -101,9 +103,13 @@ export function createDoctorSearchService(
 		const vectorLiteral = formatVectorLiteral(embedding);
 
 		const rows = await sql<DoctorRow[]>`
-			SELECT d.*
+			SELECT d.*,
+				loc.latitude,
+				loc.longitude
 			FROM doctor_search_embeddings dse
 			INNER JOIN doctors d ON d.id = dse.doctor_id
+			LEFT JOIN doctor_locations dl ON dl.doctor_id = d.id AND dl.is_primary = true
+			LEFT JOIN locations loc ON loc.id = dl.location_id
 			WHERE dse.embedding IS NOT NULL
 			ORDER BY dse.embedding <=> ${vectorLiteral}::vector
 			LIMIT ${limit}

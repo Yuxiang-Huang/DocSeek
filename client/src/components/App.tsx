@@ -20,6 +20,13 @@ export type Doctor = {
 	book_appointment_url: string | null;
 	primary_location: string | null;
 	primary_phone: string | null;
+	latitude: number | null;
+	longitude: number | null;
+};
+
+type UserLocation = {
+	latitude: number;
+	longitude: number;
 };
 
 type DoctorSearchResponse = {
@@ -54,6 +61,7 @@ type DoctorRecommendationCardProps = {
 	doctors: Doctor[];
 	activeDoctorIndex: number;
 	onNextDoctor: () => void;
+	userLocation: UserLocation | null;
 };
 
 type ResultsHeaderProps = {
@@ -86,6 +94,28 @@ export function getResultsNavigation(symptoms: string) {
 			symptoms: normalizeSymptoms(symptoms),
 		},
 	};
+}
+
+export function calculateDistance(
+	lat1: number,
+	lon1: number,
+	lat2: number,
+	lon2: number,
+): number {
+	const R = 3958.8;
+	const toRad = (deg: number) => (deg * Math.PI) / 180;
+	const dLat = toRad(lat2 - lat1);
+	const dLon = toRad(lon2 - lon1);
+	const a =
+		Math.sin(dLat / 2) ** 2 +
+		Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function formatDistance(miles: number): string {
+	if (miles < 0.1) return "Less than 0.1 mi away";
+	if (miles < 10) return `${miles.toFixed(1)} mi away`;
+	return `${Math.round(miles)} mi away`;
 }
 
 export function getNextRecommendationLabel(hasNextDoctor: boolean) {
@@ -279,9 +309,22 @@ export function DoctorRecommendationCard({
 	doctors,
 	activeDoctorIndex,
 	onNextDoctor,
+	userLocation,
 }: DoctorRecommendationCardProps) {
 	const activeDoctor = doctors[activeDoctorIndex];
 	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
+
+	const distanceLabel =
+		userLocation && activeDoctor?.latitude != null && activeDoctor?.longitude != null
+			? formatDistance(
+					calculateDistance(
+						userLocation.latitude,
+						userLocation.longitude,
+						activeDoctor.latitude,
+						activeDoctor.longitude,
+					),
+				)
+			: null;
 
 	if (!activeDoctor) {
 		return null;
@@ -314,6 +357,9 @@ export function DoctorRecommendationCard({
 			<div className="doctor-details">
 				<p className="doctor-detail">
 					{activeDoctor.primary_location ?? "Location not listed"}
+					{distanceLabel ? (
+						<span className="distance-label"> · {distanceLabel}</span>
+					) : null}
 				</p>
 				<p className="doctor-detail">
 					{activeDoctor.primary_phone ?? "Phone number not listed"}
@@ -408,6 +454,18 @@ export function ResultsPage({
 	const [activeDoctorIndex, setActiveDoctorIndex] = useState(0);
 	const [errorMessage, setErrorMessage] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+
+	useEffect(() => {
+		navigator.geolocation.getCurrentPosition(
+			(pos) =>
+				setUserLocation({
+					latitude: pos.coords.latitude,
+					longitude: pos.coords.longitude,
+				}),
+			() => {},
+		);
+	}, []);
 
 	useEffect(() => {
 		let ignore = false;
@@ -494,6 +552,7 @@ export function ResultsPage({
 						onNextDoctor={() =>
 							setActiveDoctorIndex((currentIndex) => currentIndex + 1)
 						}
+						userLocation={userLocation}
 					/>
 				) : null}
 			</section>
