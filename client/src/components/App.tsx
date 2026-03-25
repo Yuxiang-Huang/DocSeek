@@ -56,6 +56,7 @@ type DoctorRecommendationCardProps = {
 	doctors: Doctor[];
 	activeDoctorIndex: number;
 	onNextDoctor: () => void;
+	symptoms: string;
 };
 
 type ResultsHeaderProps = {
@@ -109,6 +110,14 @@ export function formatMatchedSpecialties(matched: string | null): string[] {
 		.split(";")
 		.map((s) => s.trim())
 		.filter(Boolean);
+}
+
+export function buildMatchExplanation(symptoms: string, matchedSpecialty: string | null): string {
+	const primarySpecialty = matchedSpecialty?.split(";")[0]?.trim() ?? null;
+	const base = primarySpecialty
+		? `Your symptoms were matched to this physician's expertise in ${primarySpecialty}.`
+		: "Your symptoms were matched to this physician's specialty.";
+	return `${base} You described: "${symptoms.trim()}".`;
 }
 
 export async function searchDoctors(
@@ -296,6 +305,7 @@ export function DoctorRecommendationCard({
 	doctors,
 	activeDoctorIndex,
 	onNextDoctor,
+	symptoms,
 }: DoctorRecommendationCardProps) {
 	const activeDoctor = doctors[activeDoctorIndex];
 	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
@@ -336,7 +346,10 @@ export function DoctorRecommendationCard({
 							{getMatchQualityLabel(activeDoctor.match_score)}
 						</span>
 					</div>
-					<ul className="match-specialty-list">
+					<p className="match-explanation">
+						{buildMatchExplanation(symptoms, activeDoctor.matched_specialty)}
+					</p>
+				<ul className="match-specialty-list">
 						{formatMatchedSpecialties(activeDoctor.matched_specialty).map(
 							(specialty) => (
 								<li key={specialty} className="match-specialty-item">
@@ -527,6 +540,7 @@ export function ResultsPage({
 					<DoctorRecommendationCard
 						doctors={doctors}
 						activeDoctorIndex={activeDoctorIndex}
+					symptoms={initialSymptoms}
 						onNextDoctor={() =>
 							setActiveDoctorIndex((currentIndex) => currentIndex + 1)
 						}

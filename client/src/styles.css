@@ -540,6 +540,13 @@ a {
 	white-space: nowrap;
 }
 
+.match-explanation {
+	margin: 0.5rem 0 0.75rem;
+	color: var(--text-soft);
+	font-size: 0.95rem;
+	line-height: 1.5;
+}
+
 .match-specialty-list {
 	margin: 0;
 	padding: 0;
