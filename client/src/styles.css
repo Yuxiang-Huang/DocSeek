@@ -571,6 +571,76 @@ a {
 	font-size: 1.08rem;
 }
 
+.distance-label {
+	color: var(--teal);
+	font-size: 0.95rem;
+.feedback-section {
+	margin-top: 1.75rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--line);
+}
+
+.feedback-section-label {
+	margin: 0 0 0.75rem;
+	color: rgba(147, 193, 229, 0.78);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+}
+
+.feedback-thanks {
+	margin: 0;
+	color: #8fffd3;
+	font-size: 1rem;
+}
+
+.feedback-form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.star-row {
+	display: flex;
+	gap: 0.4rem;
+}
+
+.star-btn {
+	background: none;
+	border: none;
+	font-size: 1.8rem;
+	color: rgba(144, 173, 205, 0.4);
+	cursor: pointer;
+	padding: 0;
+	line-height: 1;
+	transition: color 120ms ease;
+}
+
+.star-btn-active {
+	color: var(--teal);
+}
+
+.feedback-comment {
+	width: 100%;
+	padding: 0.7rem 0.9rem;
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+	background: rgba(14, 26, 60, 0.5);
+	color: var(--text);
+	font: inherit;
+	resize: vertical;
+}
+
+.feedback-comment::placeholder {
+	color: var(--text-muted);
+}
+
+.feedback-error {
+	margin: 0;
+	color: var(--danger);
+	font-size: 0.9rem;
+}
+
 .doctor-links {
 	display: flex;
 	flex-wrap: wrap;
