@@ -327,6 +327,61 @@ a {
 	text-align: left;
 }
 
+.emergency-care-alert {
+	display: flex;
+	gap: 1rem;
+	align-items: flex-start;
+	width: min(48rem, 100%);
+	margin: 1.35rem auto 0;
+	padding: 1.1rem 1.2rem;
+	border: 1px solid rgba(255, 120, 100, 0.45);
+	border-radius: 1rem;
+	background: linear-gradient(
+		135deg,
+		rgba(120, 24, 36, 0.55) 0%,
+		rgba(60, 12, 40, 0.65) 100%
+	);
+	color: #ffe8ec;
+	text-align: left;
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.04),
+		0 12px 32px rgba(8, 4, 16, 0.45);
+}
+
+.emergency-care-alert-icon {
+	flex: 0 0 auto;
+	color: #ffb4a8;
+	line-height: 0;
+}
+
+.emergency-care-alert-body {
+	min-width: 0;
+}
+
+.emergency-care-alert-title {
+	margin: 0 0 0.45rem;
+	font-size: 1.12rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	color: #fff;
+}
+
+.emergency-care-alert-text {
+	margin: 0;
+	font-size: 0.98rem;
+	line-height: 1.45;
+	color: rgba(255, 232, 236, 0.94);
+}
+
+.emergency-care-alert-text strong {
+	font-weight: 700;
+	color: #fff;
+}
+
+.results-page .emergency-care-alert {
+	margin: 1rem 0 0;
+}
+
 .loading-message {
 	width: min(48rem, 100%);
 	margin: 1.35rem 0 0;

@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
 	DoctorRecommendationCard,
+	EmergencyCareAlert,
 	getDoctorSearchUrl,
 	getNextRecommendationLabel,
 	getResultsNavigation,
@@ -15,7 +16,8 @@ import {
 	SearchPageShell,
 	SUGGESTED_SYMPTOMS,
 	searchDoctors,
-	validateSymptoms,
+	symptomsSuggestEmergencyCare,
+	validateSymptomsForDoctorSearch,
 } from "../components/App";
 
 afterEach(() => {
@@ -142,9 +144,41 @@ describe("doctor search helpers", () => {
 	test("exposes the quick symptom suggestions in the designed order", () => {
 		expect(SUGGESTED_SYMPTOMS).toEqual(["Migraines", "MRI scan", "Broken leg"]);
 	});
+
+	test("detects common emergency symptom phrases", () => {
+		expect(symptomsSuggestEmergencyCare("chest pain")).toBe(true);
+		expect(symptomsSuggestEmergencyCare("Chest Pain")).toBe(true);
+		expect(symptomsSuggestEmergencyCare("severe headache")).toBe(false);
+		expect(symptomsSuggestEmergencyCare("worst headache of my life")).toBe(
+			true,
+		);
+	});
+
+	test("blocks doctor search navigation when validation finds emergency symptoms", () => {
+		const blocked = validateSymptomsForDoctorSearch("chest pain");
+		expect(blocked.ok).toBe(false);
+		if (!blocked.ok) {
+			expect(blocked.message).toMatch(/emergency care/i);
+		}
+
+		const allowed = validateSymptomsForDoctorSearch("migraines");
+		expect(allowed).toEqual({ ok: true, normalized: "migraines" });
+	});
 });
 
 describe("frontend page flow", () => {
+	test("shows the emergency alert when symptom text may need urgent care", () => {
+		render(
+			<SearchHero
+				symptoms="chest pain"
+				onSymptomsChange={vi.fn()}
+				onSubmit={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByRole("alert").textContent).toMatch(/911/);
+	});
+
 	test("normalizes symptom input before navigating to the results page", () => {
 		expect(normalizeSymptoms("  migraines  ")).toBe("migraines");
 		expect(getResultsNavigation("  migraines  ")).toEqual({
@@ -153,6 +187,14 @@ describe("frontend page flow", () => {
 				symptoms: "migraines",
 			},
 		});
+	});
+
+	test("renders the emergency care alert component", () => {
+		render(<EmergencyCareAlert />);
+
+		const alert = screen.getByRole("alert");
+		expect(alert.textContent).toMatch(/911/);
+		expect(alert.textContent).toMatch(/emergency room/i);
 	});
 
 	test("renders the landing hero with the responsive helper copy hook", () => {

@@ -1,5 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Search, Stethoscope } from "lucide-react";
+import {
+	AlertTriangle,
+	ArrowLeft,
+	ArrowRight,
+	Search,
+	Stethoscope,
+} from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { calculateDistance, formatDistance } from "../utils/distance";
 
@@ -117,6 +123,99 @@ export function getSymptomValidationUrl(apiBaseUrl = API_BASE_URL) {
 
 export function normalizeSymptoms(symptoms: string) {
 	return symptoms.trim();
+}
+
+/** Lowercase, collapse spaces, normalize apostrophes for phrase matching. */
+function normalizeSymptomsForMatching(symptoms: string) {
+	return normalizeSymptoms(symptoms)
+		.toLowerCase()
+		.replace(/\u2019/g, "'")
+		.replace(/\s+/g, " ");
+}
+
+/**
+ * Heuristic keyword check for symptoms that often warrant immediate emergency care.
+ * Not a medical diagnosis — DocSeek is for finding doctors, not triage.
+ */
+const EMERGENCY_PHRASES = [
+	"anaphylaxis",
+	"can't breathe",
+	"cant breathe",
+	"chest pain",
+	"crushing chest",
+	"difficulty breathing",
+	"face drooping",
+	"heart attack",
+	"kill myself",
+	"overdose",
+	"passed out",
+	"passing out",
+	"severe bleeding",
+	"shortness of breath",
+	"slurred speech",
+	"stroke",
+	"suicidal",
+	"suicide",
+	"throat closing",
+	"thunderclap headache",
+	"trouble breathing",
+	"unconscious",
+	"want to die",
+	"won't wake",
+	"worst headache",
+] as const;
+
+export function symptomsSuggestEmergencyCare(symptoms: string) {
+	const normalized = normalizeSymptomsForMatching(symptoms);
+	if (!normalized) {
+		return false;
+	}
+	return EMERGENCY_PHRASES.some((phrase) => normalized.includes(phrase));
+}
+
+export type DoctorSearchValidation =
+	| { ok: true; normalized: string }
+	| { ok: false; message: string };
+
+/** Validates home search input before navigating to results. */
+export function validateSymptomsForDoctorSearch(
+	symptoms: string,
+): DoctorSearchValidation {
+	const normalized = normalizeSymptoms(symptoms);
+	if (!normalized) {
+		return {
+			ok: false,
+			message: "Enter your current symptoms to search for matching doctors.",
+		};
+	}
+	if (symptomsSuggestEmergencyCare(normalized)) {
+		return {
+			ok: false,
+			message:
+				"We can't start a doctor search while you may need emergency care. Call 911 or go to the ER if you need help right now.",
+		};
+	}
+	return { ok: true, normalized };
+}
+
+export function EmergencyCareAlert() {
+	return (
+		<div className="emergency-care-alert" role="alert" aria-live="assertive">
+			<div className="emergency-care-alert-icon" aria-hidden="true">
+				<AlertTriangle size={28} strokeWidth={2} />
+			</div>
+			<div className="emergency-care-alert-body">
+				<p className="emergency-care-alert-title">
+					Your symptoms may need immediate emergency care
+				</p>
+				<p className="emergency-care-alert-text">
+					If you could be having a medical emergency, call <strong>911</strong>{" "}
+					(or your local emergency number) or go to the nearest emergency room
+					now. DocSeek does not replace emergency services.
+				</p>
+			</div>
+		</div>
+	);
 }
 
 export function getResultsNavigation(symptoms: string) {
@@ -412,6 +511,8 @@ export function SearchHero({
 				validationMessage={errorMessage}
 			/>
 
+			{symptomsSuggestEmergencyCare(symptoms) ? <EmergencyCareAlert /> : null}
+
 			<div className="suggestion-list">
 				{SUGGESTED_SYMPTOMS.map((suggestion) => (
 					<button
@@ -437,6 +538,24 @@ export function HomePage({ navigateToResults }: HomePageProps) {
 		SymptomValidationMessage[]
 	>([]);
 
+<<<<<<< userstory9
+	function handleSymptomsChange(value: string) {
+		setSymptoms(value);
+		setErrorMessage("");
+	}
+
+	function handleSubmit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+
+		const validation = validateSymptomsForDoctorSearch(symptoms);
+		if (!validation.ok) {
+			setErrorMessage(validation.message);
+			return;
+		}
+
+		setErrorMessage("");
+		navigateToResults(validation.normalized);
+=======
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
@@ -467,15 +586,20 @@ export function HomePage({ navigateToResults }: HomePageProps) {
 		} finally {
 			setIsValidating(false);
 		}
+>>>>>>> main
 	}
 
 	return (
 		<SearchPageShell>
 			<SearchHero
 				symptoms={symptoms}
+<<<<<<< userstory9
+				onSymptomsChange={handleSymptomsChange}
+=======
 				onSymptomsChange={(value) => {
 					setSymptoms(value);
 				}}
+>>>>>>> main
 				onSubmit={handleSubmit}
 				errorMessage={errorMessage}
 				isLoading={isValidating}
@@ -720,6 +844,15 @@ export function ResultsPage({
 			setIsLoading(true);
 			setErrorMessage("");
 
+			if (symptomsSuggestEmergencyCare(initialSymptoms)) {
+				if (!ignore) {
+					setDoctors([]);
+					setActiveDoctorIndex(0);
+					setIsLoading(false);
+				}
+				return;
+			}
+
 			try {
 				const matchedDoctors = await searchDoctorsImpl(initialSymptoms);
 
@@ -773,6 +906,10 @@ export function ResultsPage({
 					initialSymptoms={initialSymptoms}
 				/>
 
+				{symptomsSuggestEmergencyCare(initialSymptoms) ? (
+					<EmergencyCareAlert />
+				) : null}
+
 				<div id="results-status" className="sr-only" aria-live="polite">
 					{isLoading
 						? `Loading doctor recommendations for ${initialSymptoms}.`
@@ -791,7 +928,10 @@ export function ResultsPage({
 					</p>
 				) : null}
 
-				{!errorMessage && !isLoading && doctors.length > 0 ? (
+				{!symptomsSuggestEmergencyCare(initialSymptoms) &&
+				!errorMessage &&
+				!isLoading &&
+				doctors.length > 0 ? (
 					<DoctorRecommendationCard
 						doctors={doctors}
 						activeDoctorIndex={activeDoctorIndex}
