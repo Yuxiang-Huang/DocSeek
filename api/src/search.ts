@@ -54,6 +54,7 @@ type SearchRuntimeConfig = {
 	openAiApiKey: string;
 	openAiBaseUrl: string;
 	openAiEmbeddingModel: string;
+	openAiChatModel: string;
 };
 
 export function normalizeSearchLimit(rawLimit: number | undefined): number {
@@ -102,6 +103,81 @@ export async function requestEmbedding(
 	return firstItem.embedding;
 }
 
+type ChatCompletionResponse = {
+	choices?: Array<{
+		message?: {
+			content?: string;
+		};
+	}>;
+};
+
+export async function requestDoctorSortFromOpenAI(
+	symptoms: string,
+	doctors: DoctorRow[],
+	config: SearchRuntimeConfig,
+): Promise<DoctorRow[]> {
+	if (doctors.length === 0) return doctors;
+
+	const doctorList = doctors
+		.map(
+			(d, i) =>
+				`${i + 1}. id=${d.id}, name=${d.full_name}, specialty=${d.primary_specialty ?? "unknown"}, location=${d.primary_location ?? "unknown"}`,
+		)
+		.join("\n");
+
+	const systemPrompt = `You are a medical referral assistant. Given a patient's symptoms and a list of doctors, return the doctor IDs in order of best match (most relevant first). Respond with ONLY a JSON array of integers: the doctor IDs in your recommended order. Example: [3, 1, 7, 2, 5, 4, 6, 8, 9, 10]`;
+
+	const userPrompt = `Patient symptoms: ${symptoms}
+
+Doctors (currently in vector-search order):
+${doctorList}
+
+Return a JSON array of these doctor IDs sorted by relevance to the symptoms, best match first.`;
+
+	const response = await fetch(`${config.openAiBaseUrl}/chat/completions`, {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${config.openAiApiKey}`,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			model: config.openAiChatModel,
+			messages: [
+				{ role: "system", content: systemPrompt },
+				{ role: "user", content: userPrompt },
+			],
+			temperature: 0,
+		}),
+	});
+
+	if (!response.ok) {
+		throw new Error(`Chat completion failed with status ${response.status}`);
+	}
+
+	const payload = (await response.json()) as ChatCompletionResponse;
+	const content = payload.choices?.[0]?.message?.content?.trim();
+	if (!content) {
+		throw new Error("Chat completion did not return content");
+	}
+
+	const jsonMatch = content.match(/\[[\d,\s]*\]/);
+	const sortedIds = jsonMatch
+		? (JSON.parse(jsonMatch[0]) as number[])
+		: doctors.map((d) => d.id);
+
+	const byId = new Map(doctors.map((d) => [d.id, d]));
+	const sorted: DoctorRow[] = [];
+	for (const id of sortedIds) {
+		const doctor = byId.get(id);
+		if (doctor) {
+			sorted.push(doctor);
+			byId.delete(id);
+		}
+	}
+	sorted.push(...Array.from(byId.values()));
+	return sorted;
+}
+
 export function createDoctorSearchService(
 	config: SearchRuntimeConfig,
 ): DoctorSearchService {
@@ -116,6 +192,6 @@ export function createDoctorSearchService(
 
 		const rows = await querySearchDoctors(sql, vectorLiteral, limit, filters);
 
-		return rows;
+		return requestDoctorSortFromOpenAI(symptoms, rows, config);
 	};
 }

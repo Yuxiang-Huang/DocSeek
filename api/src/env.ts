@@ -5,6 +5,7 @@ const DEFAULT_PORT = 3000;
 const DEFAULT_DATABASE_URL = "postgresql://docseek:docseek@localhost:55432/docseek_upmc";
 const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_OPENAI_EMBEDDING_MODEL = "text-embedding-3-small";
+const DEFAULT_OPENAI_CHAT_MODEL = "gpt-4o-mini";
 const DEFAULT_OPENAI_VALIDATION_MODEL = "gpt-4.1-mini";
 
 export type RuntimeConfig = {
@@ -14,6 +15,7 @@ export type RuntimeConfig = {
 	openAiApiKey: string;
 	openAiBaseUrl: string;
 	openAiEmbeddingModel: string;
+	openAiChatModel: string;
 	openAiValidationModel: string;
 };
 
@@ -63,6 +65,7 @@ export function getRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeC
 	const openAiBaseUrl = (env.OPENAI_BASE_URL ?? DEFAULT_OPENAI_BASE_URL).replace(/\/$/, "");
 	const openAiEmbeddingModel =
 		env.OPENAI_EMBEDDING_MODEL ?? DEFAULT_OPENAI_EMBEDDING_MODEL;
+	const openAiChatModel = env.OPENAI_CHAT_MODEL ?? DEFAULT_OPENAI_CHAT_MODEL;
 	const openAiValidationModel =
 		env.OPENAI_VALIDATION_MODEL ?? DEFAULT_OPENAI_VALIDATION_MODEL;
 
@@ -79,6 +82,7 @@ export function getRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeC
 		openAiApiKey,
 		openAiBaseUrl,
 		openAiEmbeddingModel,
+		openAiChatModel,
 		openAiValidationModel,
 	};
 }
