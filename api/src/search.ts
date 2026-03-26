@@ -19,6 +19,8 @@ export type DoctorRow = {
 	primary_location: string | null;
 	primary_phone: string | null;
 	created_at: string;
+	match_score: number;
+	matched_specialty: string | null;
 	latitude: number | null;
 	longitude: number | null;
 };
@@ -108,20 +110,11 @@ export function createDoctorSearchService(
 	return async ({ symptoms, options }) => {
 		const limit = normalizeSearchLimit(options?.limit);
 		const filters = options?.filters ?? {};
-		const locationFilter =
-			typeof filters.location === "string" && filters.location.trim()
-				? filters.location.trim()
-				: null;
-		const onlyAccepting =
-			filters.onlyAcceptingNewPatients === true ? true : null;
 
 		const embedding = await requestEmbedding(symptoms, config);
 		const vectorLiteral = formatVectorLiteral(embedding);
 
-		const rows = await querySearchDoctors(sql, vectorLiteral, limit, {
-			locationContains: locationFilter,
-			onlyAcceptingNewPatients: onlyAccepting,
-		});
+		const rows = await querySearchDoctors(sql, vectorLiteral, limit, filters);
 
 		return rows;
 	};
