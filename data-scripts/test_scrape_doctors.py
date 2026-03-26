@@ -148,3 +148,14 @@ def test_build_doctor_record_uses_primary_location_and_related_lists() -> None:
     assert record["tags"] == ["Accepting New Patients", "Online booking", "Video Visit"]
     assert record["hospitals"] == ["UPMC Altoona", "Provider Enrollment and Credentialing"]
     assert record["locations"][0]["source_location_id"] == 5427752
+
+
+def test_load_records_truncates_feedback_with_doctors() -> None:
+    """feedback.doctor_id FK would block TRUNCATE doctors without truncating feedback."""
+    path = Path(__file__).resolve().parent / "scrape_doctors.py"
+    text = path.read_text(encoding="utf-8")
+    start = text.index("TRUNCATE doctor_search_embeddings")
+    end = text.index("RESTART IDENTITY", start)
+    truncate_clause = text[start:end]
+    assert "feedback" in truncate_clause
+    assert "doctors" in truncate_clause

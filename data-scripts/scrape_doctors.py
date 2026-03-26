@@ -295,7 +295,7 @@ def load_records(conn: psycopg.Connection[Any], records: list[dict[str, Any]]) -
                 """
                 TRUNCATE doctor_search_embeddings, doctor_hospitals,
                          doctor_locations, doctor_specialties, doctor_age_groups,
-                         doctor_tags, hospitals, locations, specialties,
+                         doctor_tags, feedback, hospitals, locations, specialties,
                          age_groups, tags, doctors
                 RESTART IDENTITY;
                 """
