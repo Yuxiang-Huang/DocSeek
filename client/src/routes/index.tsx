@@ -10,8 +10,8 @@ function HomeRoute() {
 
 	return (
 		<HomePage
-			navigateToResults={(symptoms) =>
-				void navigate(getResultsNavigation(symptoms))
+			navigateToResults={(symptoms, filters) =>
+				void navigate(getResultsNavigation(symptoms, filters))
 			}
 		/>
 	);
