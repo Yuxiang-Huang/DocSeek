@@ -1,15 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+	AlertTriangle,
 	ArrowLeft,
 	ArrowRight,
 	Bookmark,
 	BookmarkCheck,
 	Filter,
-import { Link } from "@tanstack/react-router";
-import {
-	AlertTriangle,
-	ArrowLeft,
-	ArrowRight,
 	Search,
 	Stethoscope,
 } from "lucide-react";
@@ -36,6 +32,8 @@ export type Doctor = {
 	book_appointment_url: string | null;
 	primary_location: string | null;
 	primary_phone: string | null;
+	match_score: number | null;
+	matched_specialty: string | null;
 	latitude: number | null;
 	longitude: number | null;
 };
@@ -118,6 +116,7 @@ type DoctorRecommendationCardProps = {
 	doctors: Doctor[];
 	activeDoctorIndex: number;
 	onNextDoctor: () => void;
+	symptoms: string;
 	isSaved?: boolean;
 	onSave?: () => void;
 	onUnsave?: () => void;
@@ -305,6 +304,27 @@ export function getNextRecommendationLabel(hasNextDoctor: boolean) {
 
 export function direct_to_booking(doctor: Doctor): string | null {
 	return doctor.book_appointment_url ?? doctor.profile_url;
+export function getMatchQualityLabel(score: number | null): string {
+	if (score === null) return "Possible match";
+	if (score >= 0.55) return "Strong match";
+	if (score >= 0.4) return "Good match";
+	return "Possible match";
+}
+
+export function formatMatchedSpecialties(matched: string | null): string[] {
+	if (!matched) return [];
+	return matched
+		.split(";")
+		.map((s) => s.trim())
+		.filter(Boolean);
+}
+
+export function buildMatchExplanation(symptoms: string, matchedSpecialty: string | null): string {
+	const primarySpecialty = matchedSpecialty?.split(";")[0]?.trim() ?? null;
+	const base = primarySpecialty
+		? `Your symptoms were matched to this physician's expertise in ${primarySpecialty}.`
+		: "Your symptoms were matched to this physician's specialty.";
+	return `${base} You described: "${symptoms.trim()}".`;
 }
 
 export async function searchDoctors(
@@ -800,6 +820,7 @@ export function DoctorRecommendationCard({
 	doctors,
 	activeDoctorIndex,
 	onNextDoctor,
+	symptoms,
 	isSaved = false,
 	onSave,
 	onUnsave,
@@ -877,6 +898,28 @@ export function DoctorRecommendationCard({
 			<p className="doctor-meta">
 				{activeDoctor.primary_specialty ?? "Specialty not listed"}
 			</p>
+			{activeDoctor.matched_specialty ? (
+				<div className="match-reason">
+					<div className="match-reason-header">
+						<p className="match-reason-label">Why recommended</p>
+						<span className="match-quality-badge">
+							{getMatchQualityLabel(activeDoctor.match_score)}
+						</span>
+					</div>
+					<p className="match-explanation">
+						{buildMatchExplanation(symptoms, activeDoctor.matched_specialty)}
+					</p>
+				<ul className="match-specialty-list">
+						{formatMatchedSpecialties(activeDoctor.matched_specialty).map(
+							(specialty) => (
+								<li key={specialty} className="match-specialty-item">
+									{specialty}
+								</li>
+							),
+						)}
+					</ul>
+				</div>
+			) : null}
 			<div className="doctor-details">
 				<p className="doctor-detail">
 					{activeDoctor.primary_location ?? "Location not listed"}
@@ -1226,6 +1269,7 @@ export function ResultsPage({
 					<DoctorRecommendationCard
 						doctors={doctors}
 						activeDoctorIndex={activeDoctorIndex}
+					symptoms={initialSymptoms}
 						onNextDoctor={() =>
 							setActiveDoctorIndex((currentIndex) => currentIndex + 1)
 						}
