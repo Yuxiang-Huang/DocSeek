@@ -306,6 +306,8 @@ export function getNextRecommendationLabel(hasNextDoctor: boolean) {
 /** UPMC scheduling is reached from the provider profile page. */
 export function direct_to_booking(doctor: Doctor): string | null {
 	return doctor.profile_url;
+}
+
 export function getMatchQualityLabel(score: number | null): string {
 	if (score === null) return "Possible match";
 	if (score >= 0.55) return "Strong match";
