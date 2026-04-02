@@ -119,7 +119,7 @@ flowchart LR
   API --> EMB
   EMB --> SQL
   SQL --> PG
-  PG -->|DoctorRow[] + match_score + matched_specialty| SORT
+  PG -->|"DoctorRow[] + match_score + matched_specialty"| SORT
   SORT --> API
   API --> SORT
   SORT -->|ordered doctors JSON| C
