@@ -1058,6 +1058,343 @@ These are **React props** types (all fields are required unless optional `?` in 
 
 ---
 
+## Technologies, libraries, and APIs
+
+Every dependency used in User Story 1 that the team did not write itself is listed below. Version numbers are the minimum required (from `package.json` / `pyproject.toml` / `compose.yml`).
+
+### Runtime environment
+
+| Technology | Version | Purpose | Why chosen | Source / Docs |
+| --- | --- | --- | --- | --- |
+| **Bun** | 1.x | JavaScript runtime and package manager for the API and client build | Single-binary runtime with built-in SQL client, fast startup, and native TypeScript support — eliminates the need for a separate Node.js + package manager setup | Author: Jarred Sumner / Oven. [https://bun.sh](https://bun.sh) · [Docs](https://bun.sh/docs) |
+| **PostgreSQL** | 16 | Relational database storing doctor records, embeddings, and feedback | Mature, open-source RDBMS with robust support for extensions (pgvector), ACID guarantees, and wide hosting availability | [https://www.postgresql.org](https://www.postgresql.org) · [Docs](https://www.postgresql.org/docs/16/) |
+| **pgvector** | bundled with `pgvector/pgvector:pg16` image | PostgreSQL extension enabling vector storage and cosine-similarity nearest-neighbor search (`<=>` operator) | Only production-ready native Postgres vector extension; keeps embeddings co-located with doctor rows, avoiding a separate vector database | Author: Andrew Kane. [https://github.com/pgvector/pgvector](https://github.com/pgvector/pgvector) |
+| **Docker / Docker Compose** | any recent stable | Orchestrates Postgres, API, and client containers in local dev and deployment | Ensures reproducible environment across developer machines; single `docker compose up` command | [https://docs.docker.com/compose/](https://docs.docker.com/compose/) |
+
+### API (server-side — TypeScript / Bun)
+
+| Technology | Version | Purpose | Why chosen | Source / Docs |
+| --- | --- | --- | --- | --- |
+| **Hono** | ^4.12.8 | HTTP framework for routing and CORS middleware on Bun | Lightweight, edge-compatible framework with first-class Bun support, minimal overhead, and a clean middleware model | Author: Yusuke Wada. [https://hono.dev](https://hono.dev) · [npm](https://www.npmjs.com/package/hono) |
+| **TypeScript** | ^5.7.2 | Typed superset of JavaScript used for all API source files | Type safety for OpenAI responses, database rows, and service interfaces; catches shape mismatches at compile time | [https://www.typescriptlang.org](https://www.typescriptlang.org) · [Docs](https://www.typescriptlang.org/docs/) |
+| **@types/bun** | latest | TypeScript type declarations for Bun's built-in APIs (`Bun.SQL`, etc.) | Required for type-checking Bun-specific globals | [https://www.npmjs.com/package/@types/bun](https://www.npmjs.com/package/@types/bun) |
+| **OpenAI API** | REST (no pinned SDK version; accessed via `fetch`) | (1) `text-embedding-3-small` embeddings for symptom and specialty vectors; (2) chat completions for symptom validation and doctor re-ranking | Highest-quality general-purpose embedding and completion API with structured JSON output mode; models configurable via env vars | [https://platform.openai.com/docs](https://platform.openai.com/docs) |
+
+### Client (browser — React / Vite)
+
+| Technology | Version | Purpose | Why chosen | Source / Docs |
+| --- | --- | --- | --- | --- |
+| **React** | ^19.2.0 | UI component library for the search and results pages | Industry-standard library with a large ecosystem; function components and hooks map cleanly to the search-flow state machine | [https://react.dev](https://react.dev) · [npm](https://www.npmjs.com/package/react) |
+| **react-dom** | ^19.2.0 | React renderer for the browser DOM | Required companion to React for browser environments | [https://react.dev](https://react.dev) · [npm](https://www.npmjs.com/package/react-dom) |
+| **Vite** | ^7.3.1 | Build tool and dev server for the client | Sub-second HMR, native ES module dev server, and Bun compatibility; significantly faster than webpack/CRA | [https://vitejs.dev](https://vitejs.dev) · [Docs](https://vitejs.dev/guide/) |
+| **@vitejs/plugin-react** | ^5.1.4 | Vite plugin enabling React Fast Refresh and JSX transform | Official plugin required for React + Vite integration | [https://github.com/vitejs/vite-plugin-react](https://github.com/vitejs/vite-plugin-react) |
+| **@tanstack/react-router** | latest | File-based type-safe client-side routing | Provides full TypeScript inference for route params and search params; chosen over React Router for its type-safety and file-route convention | [https://tanstack.com/router](https://tanstack.com/router) · [Docs](https://tanstack.com/router/latest/docs/framework/react/overview) |
+| **@tanstack/react-start** | latest | SSR / full-stack adapter for TanStack Router | Provides server-rendered entry points when deploying beyond static hosting | [https://tanstack.com/start](https://tanstack.com/start) |
+| **@tanstack/react-query** | latest | Server-state caching and async data fetching | Manages doctor-list fetch, loading/error states, and background refetch; chosen over manual `useEffect` patterns for reliability | [https://tanstack.com/query](https://tanstack.com/query) · [Docs](https://tanstack.com/query/latest/docs/framework/react/overview) |
+| **@tanstack/router-plugin** | ^1.132.0 | Vite plugin for TanStack Router code generation | Generates route tree from file-based routes at build time | [https://tanstack.com/router](https://tanstack.com/router) |
+| **Tailwind CSS** | ^4.1.18 | Utility-first CSS framework for styling all components | Enables rapid, consistent styling without custom CSS files; v4 integrates directly with Vite | [https://tailwindcss.com](https://tailwindcss.com) · [Docs](https://tailwindcss.com/docs) |
+| **@tailwindcss/vite** | ^4.1.18 | Vite plugin for Tailwind CSS v4 | Required Vite integration for Tailwind 4 (replaces PostCSS plugin) | [https://github.com/tailwindlabs/tailwindcss](https://github.com/tailwindlabs/tailwindcss) |
+| **@tailwindcss/typography** | ^0.5.16 | Tailwind plugin for prose/typography styles | Used for readable text blocks in doctor profile descriptions | [https://github.com/tailwindlabs/tailwindcss-typography](https://github.com/tailwindlabs/tailwindcss-typography) |
+| **lucide-react** | ^0.545.0 | Icon library (SVG icons as React components) | Lightweight, tree-shakeable, and comprehensive icon set used for UI icons (search, save, arrow, etc.) | [https://lucide.dev](https://lucide.dev) · [npm](https://www.npmjs.com/package/lucide-react) |
+| **TypeScript** | ^5.7.2 | Typed JavaScript for all client source files | Shared with API to enforce type-safe API contracts and component props | [https://www.typescriptlang.org](https://www.typescriptlang.org) |
+| **vite-tsconfig-paths** | ^5.1.4 | Vite plugin resolving TypeScript path aliases (`#/*`) | Allows `#/components/...` imports without relative path traversal | [https://github.com/aleclarson/vite-tsconfig-paths](https://github.com/aleclarson/vite-tsconfig-paths) |
+| **Vitest** | ^3.0.5 | Unit and integration test framework | Native Vite integration, Jest-compatible API; runs fast in the same toolchain | [https://vitest.dev](https://vitest.dev) |
+| **@testing-library/react** | ^16.3.0 | React component testing utilities | DOM-centric testing approach that tests user-visible behavior rather than implementation details | [https://testing-library.com/react](https://testing-library.com/react) |
+| **@testing-library/dom** | ^10.4.1 | DOM testing utilities (dependency of @testing-library/react) | Required companion for DOM queries | [https://testing-library.com](https://testing-library.com) |
+| **jsdom** | ^28.1.0 | Browser DOM simulation for Vitest | Provides a browser-like environment for component tests running in Node/Bun | [https://github.com/jsdom/jsdom](https://github.com/jsdom/jsdom) |
+| **Biome** | 2.4.5 | Linter and formatter for TypeScript/JavaScript | Single fast tool replacing ESLint + Prettier; enforces consistent code style across client and API | [https://biomejs.dev](https://biomejs.dev) · [Docs](https://biomejs.dev/guides/getting-started/) |
+
+### Data scripts (Python)
+
+| Technology | Version | Purpose | Why chosen | Source / Docs |
+| --- | --- | --- | --- | --- |
+| **Python** | >=3.12 | Runtime for scraping, data loading, and embedding generation scripts | Mature ecosystem for web scraping and data processing; Selenium and BeautifulSoup are Python-native | [https://www.python.org](https://www.python.org) · [Docs](https://docs.python.org/3.12/) |
+| **Selenium** | >=4.41.0 | Headless browser automation for scraping UPMC doctor pages | Required because UPMC doctor pages render data via JavaScript; static HTTP fetching returns empty content | [https://www.selenium.dev](https://www.selenium.dev) · [PyPI](https://pypi.org/project/selenium/) |
+| **BeautifulSoup4** | >=4.14.3 | HTML parsing of scraped UPMC pages | Simple, battle-tested HTML parser with CSS selector support; used to extract doctor fields from rendered DOM | Author: Leonard Richardson. [https://www.crummy.com/software/BeautifulSoup/](https://www.crummy.com/software/BeautifulSoup/) · [PyPI](https://pypi.org/project/beautifulsoup4/) |
+| **lxml** | >=6.0.2 | Fast XML/HTML parser used as BeautifulSoup backend | Significantly faster than Python's built-in html.parser for large pages | [https://lxml.de](https://lxml.de) · [PyPI](https://pypi.org/project/lxml/) |
+| **httpx** | >=0.28.1 | Async HTTP client for calling the OpenAI embeddings API from Python scripts | Modern async-capable HTTP client with a clean API; chosen over `requests` for async embedding batch calls | [https://www.python-httpx.org](https://www.python-httpx.org) · [PyPI](https://pypi.org/project/httpx/) |
+| **psycopg** | >=3.3.3 | PostgreSQL database adapter for Python (psycopg3 with binary extras) | Modern async-capable Postgres driver; psycopg3 binary variant avoids needing libpq system library | [https://www.psycopg.org](https://www.psycopg.org) · [PyPI](https://pypi.org/project/psycopg/) |
+| **pytest** | >=9.0.2 | Python test framework for data script unit tests | Canonical Python testing framework with minimal boilerplate | [https://docs.pytest.org](https://docs.pytest.org) · [PyPI](https://pypi.org/project/pytest/) |
+| **uv** | any recent | Python package and environment manager for data scripts | Extremely fast dependency resolver and virtualenv manager; replaces pip + venv | [https://github.com/astral-sh/uv](https://github.com/astral-sh/uv) |
+
+---
+
+## Database schema and storage
+
+### Table: `doctors`
+
+Primary record for each physician scraped from UPMC.
+
+| Field | Type | Purpose | Storage (bytes) |
+| --- | --- | --- | --- |
+| `id` | `BIGSERIAL` | Auto-generated surrogate primary key | 8 |
+| `source_provider_id` | `BIGINT` | UPMC-assigned provider ID (unique, used to detect duplicates on re-scrape) | 8 |
+| `npi` | `TEXT` | National Provider Identifier — unique 10-digit number assigned by CMS to each US healthcare provider | ~12 |
+| `full_name` | `TEXT` | Display name shown in the UI | ~30 |
+| `first_name` | `TEXT` | Given name | ~12 |
+| `middle_name` | `TEXT` | Middle name or initial | ~6 |
+| `last_name` | `TEXT` | Family name | ~12 |
+| `suffix` | `TEXT` | Credentials suffix (e.g., "MD", "DO", "PhD") | ~6 |
+| `primary_specialty` | `TEXT` | Doctor's primary specialty as listed by UPMC | ~30 |
+| `accepting_new_patients` | `BOOLEAN` | Whether the doctor is currently accepting new patients — used as a search filter | 1 |
+| `profile_url` | `TEXT` | URL to the doctor's UPMC profile page | ~80 |
+| `ratings_url` | `TEXT` | URL to the ratings page for this doctor | ~80 |
+| `book_appointment_url` | `TEXT` | URL to the online appointment booking page | ~80 |
+| `primary_location` | `TEXT` | Human-readable primary practice location string | ~50 |
+| `primary_phone` | `TEXT` | Contact phone number for the primary practice location | ~15 |
+| `created_at` | `TIMESTAMPTZ` | Timestamp when the row was inserted | 8 |
+
+**Estimated bytes per doctor row:** ~440 bytes (excluding TOAST overhead for long text fields).
+
+---
+
+### Table: `hospitals`
+
+Lookup table for hospital names affiliated with doctors.
+
+| Field | Type | Purpose | Storage (bytes) |
+| --- | --- | --- | --- |
+| `id` | `BIGSERIAL` | Surrogate PK | 8 |
+| `name` | `TEXT` | Hospital name (unique) | ~40 |
+
+---
+
+### Table: `specialties`
+
+Lookup table for specialty names.
+
+| Field | Type | Purpose | Storage (bytes) |
+| --- | --- | --- | --- |
+| `id` | `BIGSERIAL` | Surrogate PK | 8 |
+| `name` | `TEXT` | Specialty name (unique) | ~30 |
+
+---
+
+### Table: `age_groups`
+
+Lookup table for patient age groups a doctor serves.
+
+| Field | Type | Purpose | Storage (bytes) |
+| --- | --- | --- | --- |
+| `id` | `BIGSERIAL` | Surrogate PK | 8 |
+| `name` | `TEXT` | Age group label (e.g., "Adults", "Pediatric") | ~15 |
+
+---
+
+### Table: `tags`
+
+Lookup table for free-form tags scraped from UPMC profiles.
+
+| Field | Type | Purpose | Storage (bytes) |
+| --- | --- | --- | --- |
+| `id` | `BIGSERIAL` | Surrogate PK | 8 |
+| `name` | `TEXT` | Tag label (unique) | ~20 |
+
+---
+
+### Table: `locations`
+
+Practice location records (one row per unique UPMC location).
+
+| Field | Type | Purpose | Storage (bytes) |
+| --- | --- | --- | --- |
+| `id` | `BIGSERIAL` | Surrogate PK | 8 |
+| `source_location_id` | `BIGINT` | UPMC-assigned location ID | 8 |
+| `name` | `TEXT` | Location display name | ~40 |
+| `street1` | `TEXT` | Street address line 1 | ~30 |
+| `street2` | `TEXT` | Street address line 2 | ~15 |
+| `suite` | `TEXT` | Suite or floor number | ~8 |
+| `city` | `TEXT` | City | ~15 |
+| `state` | `TEXT` | State abbreviation | 2 |
+| `zip_code` | `TEXT` | ZIP code | 5 |
+| `phone` | `TEXT` | Location phone number | ~15 |
+| `latitude` | `DOUBLE PRECISION` | Geographic latitude for distance calculation | 8 |
+| `longitude` | `DOUBLE PRECISION` | Geographic longitude for distance calculation | 8 |
+
+**Estimated bytes per location row:** ~170 bytes.
+
+---
+
+### Join tables
+
+| Table | Fields | Purpose | Bytes per row |
+| --- | --- | --- | --- |
+| `doctor_hospitals` | `doctor_id BIGINT`, `hospital_id BIGINT` | Many-to-many: which hospitals a doctor is affiliated with | 16 |
+| `doctor_specialties` | `doctor_id BIGINT`, `specialty_id BIGINT` | Many-to-many: all specialties for a doctor | 16 |
+| `doctor_age_groups` | `doctor_id BIGINT`, `age_group_id BIGINT` | Many-to-many: age groups a doctor treats | 16 |
+| `doctor_tags` | `doctor_id BIGINT`, `tag_id BIGINT` | Many-to-many: tags associated with a doctor | 16 |
+| `doctor_locations` | `doctor_id BIGINT`, `location_id BIGINT`, `rank INTEGER`, `is_primary BOOLEAN` | Many-to-many: locations where a doctor practices, with primary flag | 21 |
+
+---
+
+### Table: `feedback`
+
+User-submitted feedback on doctor search results.
+
+| Field | Type | Purpose | Storage (bytes) |
+| --- | --- | --- | --- |
+| `id` | `BIGSERIAL` | Surrogate PK | 8 |
+| `doctor_id` | `BIGINT` | Foreign key to the doctor being rated | 8 |
+| `rating` | `INTEGER` | 1–5 star rating submitted by the user | 4 |
+| `comment` | `TEXT` | Optional free-text comment from the user | ~100 (typical) |
+| `created_at` | `TIMESTAMPTZ` | Timestamp of submission | 8 |
+
+**Estimated bytes per feedback row:** ~130 bytes.
+
+---
+
+### Table: `doctor_search_embeddings`
+
+Stores the OpenAI embedding vector used for nearest-neighbor specialty search.
+
+| Field | Type | Purpose | Storage (bytes) |
+| --- | --- | --- | --- |
+| `doctor_id` | `BIGINT` | PK and FK to `doctors` | 8 |
+| `content` | `TEXT` | Plain-text specialty string that was embedded (e.g., `"Specialty: Cardiology"`) | ~30 |
+| `source_field` | `TEXT` | Indicates which field produced the embedding (default: `"specialty"`) | ~10 |
+| `embedding_model` | `TEXT` | OpenAI model ID used to produce the vector (e.g., `"text-embedding-3-small"`) | ~25 |
+| `embedding` | `vector(1536)` | 1536-dimensional float32 embedding vector; `1536 × 4 = 6 144` bytes | 6 144 |
+| `updated_at` | `TIMESTAMPTZ` | Timestamp of last embedding regeneration | 8 |
+
+**Estimated bytes per embedding row:** ~6 225 bytes.
+
+---
+
+## Failure-mode effects
+
+### Frontend process crash
+
+**User-visible:** The browser tab shows an error page or blank screen. Any in-progress symptom text and filter selections are lost. The user must reload the page.
+
+**Internally visible:** No server-side side-effects; the API and database are unaffected. No in-flight requests are aborted server-side beyond normal TCP close.
+
+---
+
+### Loss of all runtime state (e.g., hot reload clears React state)
+
+**User-visible:** The symptom search field is cleared, selected filters reset, and any results carousel position is lost. Saved physicians stored in `localStorage` are preserved (they are persisted separately). The user must re-enter their symptoms and re-run the search.
+
+**Internally visible:** The TanStack Query cache is dropped; any in-progress API calls that completed are no longer visible. No data loss in the database.
+
+---
+
+### All stored data erased (database wiped)
+
+**User-visible:** All search results return empty lists regardless of symptom input. The UI renders a "no results" state. Feedback that users previously submitted is gone. Saved physician IDs stored in `localStorage` still appear in the Saved Physicians list but the API cannot resolve them to doctor records.
+
+**Internally visible:** All doctor rows, embeddings, locations, feedback, and lookup tables are gone. The embedding vectors must be regenerated from scratch using the scraping and embedding scripts before the service is usable again.
+
+---
+
+### Corrupt data detected in the database
+
+**User-visible:** Corrupt doctor rows may appear in search results with missing names, empty specialty fields, or broken profile links. If an embedding vector is corrupt, the affected doctor may be ranked incorrectly or not returned. There is currently no client-side detection or flagging of corrupt records.
+
+**Internally visible:** pgvector may return an error for malformed vector literals, causing the search query to fail entirely (500 response to the client). Partial corruption of text fields is silent and surfaces only as missing UI content.
+
+---
+
+### Remote procedure call (API call) failed
+
+**User-visible:** The symptom validation step shows a validation error state or the results page shows an error message. The UI does not crash; the user can retry the search. Specific OpenAI call failures (embedding or re-ranking) propagate as a 500 from the API, which the client surfaces as a generic error.
+
+**Internally visible:** The Hono API returns an HTTP error to the client. If the OpenAI embedding call fails, no database query is executed. If the re-ranking call fails, the vector-ordered results are returned without re-ranking (depending on error handling in the current implementation).
+
+---
+
+### Client overloaded (too many concurrent users / browser tabs)
+
+**User-visible:** The React UI may become sluggish or unresponsive on low-end devices if many re-renders occur. Individual search requests to the API are still independent; one slow tab does not affect others.
+
+**Internally visible:** The Bun API has no built-in rate limiting. Under high concurrency, the API makes multiple simultaneous requests to OpenAI (embedding + validation + re-ranking), which may hit OpenAI rate limits and return 429 errors. PostgreSQL connection pressure increases; Bun's SQL pool manages this, but queries may queue.
+
+---
+
+### Client out of RAM
+
+**User-visible:** The browser may kill the tab (OOM). All unsaved runtime state (current symptoms, results) is lost. Saved physicians in `localStorage` are preserved.
+
+**Internally visible:** The API is unaffected. Any in-flight API request from the killed tab is abandoned; the server-side processing completes but the response is discarded.
+
+---
+
+### Database out of space
+
+**User-visible:** New feedback submissions fail silently or show an error. Search results are unaffected as long as existing data (doctors, embeddings) is already stored. If the disk fills completely, PostgreSQL may refuse all writes including autovacuum, potentially degrading read performance over time.
+
+**Internally visible:** `INSERT` statements (feedback, any re-scrape) fail with a disk-full error. Bun's SQL client propagates the error; the Hono route returns a 500. No data corruption of existing rows occurs from a write failure.
+
+---
+
+### Lost network connectivity (client ↔ API)
+
+**User-visible:** The search request hangs until the browser's fetch timeout, then shows a network error state. The symptom input and selected filters remain visible. Saved physicians in `localStorage` are unaffected.
+
+**Internally visible:** No API or database activity occurs because the request never reaches the server.
+
+---
+
+### Lost access to the database (API ↔ Postgres)
+
+**User-visible:** All search requests return errors (500). The home page loads normally (static UI), but submitting any symptom search fails. Feedback submissions also fail.
+
+**Internally visible:** Bun's SQL client throws connection errors. The Hono API surfaces these as 500 responses. OpenAI calls for embedding and validation may still execute before the database query is attempted, consuming API quota unnecessarily.
+
+---
+
+### Bot signs up and spams users
+
+**User-visible / impact:** DocSeek has no user account system — there is no sign-up, login, or user-to-user messaging. Bots cannot spam other users through DocSeek. The only write path is the anonymous feedback endpoint (`POST /feedback`), which a bot could spam with fake ratings and comments.
+
+**Internally visible:** Spam feedback rows accumulate in the `feedback` table, consuming disk space and skewing any future analytics. There is currently no CAPTCHA, rate limiting, or authentication on the feedback endpoint.
+
+---
+
+## Personally Identifying Information (PII)
+
+### PII stored in long-term storage
+
+The system stores **no PII about patients or application users**. The database contains only publicly available information about UPMC physicians (names, NPI numbers, specialties, practice locations, phone numbers, and profile URLs), all of which is scraped from the publicly accessible UPMC Find a Doctor website. No user accounts, login credentials, or patient health information are collected.
+
+The `feedback` table stores anonymous ratings and optional free-text comments. No IP address, session identifier, user name, or any linkage to the submitting individual is stored alongside feedback rows.
+
+#### Data stored that relates to physicians (public figures in their professional capacity)
+
+| Data item | Justification for storage | How stored | How it entered the system | Data path into storage | Data path out of storage | Responsible team members |
+| --- | --- | --- | --- | --- | --- | --- |
+| Physician full name, first name, middle name, last name, suffix | Required to display doctor identity to the patient seeking care | Plaintext `TEXT` fields in the `doctors` table in PostgreSQL | Scraped from publicly accessible UPMC physician profile pages by `data-scripts/scrape_doctors.py` | `scrape_doctors.py` → UPMC DOM via Selenium → BeautifulSoup parsing → `repopulate_database.py` → psycopg `INSERT` → `doctors` table | `querySearchDoctors` (`api/src/queries.ts`) → `DoctorRow` → JSON API response → `ResultsPage` / `DoctorRecommendationCard` (`client/src/components/App.tsx`) | Yuxiang Huang ([@Yuxiang-Huang](https://github.com/Yuxiang-Huang)) |
+| NPI (National Provider Identifier) | NPI is a public, government-issued number for verifying provider identity; stored to support future verification or linking to external registries | Plaintext `TEXT` in `doctors.npi` | Same scraping pipeline as above | Same path as above | Same query path as above; not currently exposed in the UI | Yuxiang Huang ([@Yuxiang-Huang](https://github.com/Yuxiang-Huang)) |
+| Practice location (address, city, state, ZIP, phone, lat/lon) | Required to support location-based filtering and distance display to the patient | Plaintext fields in the `locations` table | Scraped from UPMC; coordinates added via migration `001-add-location-coordinates.sql` | `scrape_doctors.py` → `repopulate_database.py` → `locations` table | `querySearchDoctors` JOIN on `locations` → `DoctorRow.latitude/longitude` → `calculateDistance` (`client/src/utils/distance.ts`) → distance label in UI | Yuxiang Huang ([@Yuxiang-Huang](https://github.com/Yuxiang-Huang)) |
+| Profile URL, ratings URL, booking URL | Required to direct patients to the correct UPMC pages for more information and appointment booking | Plaintext `TEXT` in `doctors` table | Scraped from UPMC | Same scraping path | `DoctorRow` → client `Doctor` type → rendered as anchor links in `DoctorRecommendationCard` | Yuxiang Huang ([@Yuxiang-Huang](https://github.com/Yuxiang-Huang)) |
+
+#### Feedback data
+
+The `feedback` table stores a `doctor_id`, a 1–5 star rating, an optional comment, and a timestamp. No submitter identity is recorded. **This is not PII** because it cannot be linked back to any individual. However, a submitted comment field could theoretically contain self-identifying information typed by the user; no technical control currently prevents this.
+
+---
+
+### Auditing procedures
+
+**Routine access:** Database access requires credentials set in the `DATABASE_URL` environment variable. In the Docker Compose environment, the credentials (`docseek` / `docseek`) are shared among the API container and any developer running data scripts. No automated audit logging of query-level access is configured.
+
+**Non-routine access:** Any developer with the `DATABASE_URL` can connect directly to Postgres (e.g., via `psql` or a GUI client). There is no formal access-review procedure beyond reviewing who has access to the repository and deployment environment. Yuxiang Huang ([@Yuxiang-Huang](https://github.com/Yuxiang-Huang)) holds primary responsibility for database security.
+
+---
+
+### Minors' PII
+
+**Is the PII of a minor under the age of 18 solicited or stored by the system?**
+
+No. DocSeek does not collect any information from users (patients). It only stores publicly available professional information about licensed UPMC physicians, all of whom are adults in their professional capacity.
+
+**Why?** The system is a physician-matching search tool. It does not require user registration, authentication, or any personal information from the person using the search.
+
+**Guardian permission:** Not applicable — no user PII of any age is collected.
+
+**Policy for preventing access by persons convicted or suspected of child abuse:** Not applicable. The system stores no minors' PII. The physician data it stores (names, specialties, contact information) is publicly available on UPMC's own website. No special access controls beyond standard database credentials are applied, and no such policy is needed given the nature of the data.
+
+---
+
 ## Summary
 
 This specification documents **User Story 1** as implemented: patients enter symptoms (with optional filters), the API validates descriptiveness via OpenAI, embeds symptoms and retrieves nearest UPMC doctors from **pgvector**, re-ranks with an **OpenAI chat** call for expertise alignment, and the **React** results experience presents ranked physicians with match explanations, optional distance, and feedback. Primary ownership is **acee3** with secondary **Yuxiang Huang**; the referenced merge activity on core files is dated **2026-03-26** as above.
