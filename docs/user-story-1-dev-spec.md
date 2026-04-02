@@ -10,8 +10,8 @@
 
 | Role | Owner | Notes |
 | --- | --- | --- |
-| **Primary owner** | Yuxiang Huang ([@Yuxiang-Huang](https://github.com/Yuxiang-Huang)) | Repository maintainer and engineering lead for DocSeek; accountable for implementation quality and API/client integration for physician matching. |
-| **Secondary owner** | acee3 ([@acee3](https://github.com/acee3)) | Story author and Sprint 2 backlog contact (see issue [#37](https://github.com/Yuxiang-Huang/DocSeek/issues/37)); accountable for acceptance criteria and product clarifications. |
+| **Primary owner** | acee3 ([@acee3](https://github.com/acee3)) | Story author and Sprint 2 backlog contact (see issue [#37](https://github.com/Yuxiang-Huang/DocSeek/issues/37)); accountable for acceptance criteria and product clarifications. |
+| **Secondary owner** | Yuxiang Huang ([@Yuxiang-Huang](https://github.com/Yuxiang-Huang)) | Repository maintainer and engineering lead for DocSeek; accountable for implementation quality and API/client integration for physician matching. |
 
 ---
 
@@ -1060,4 +1060,4 @@ These are **React props** types (all fields are required unless optional `?` in 
 
 ## Summary
 
-This specification documents **User Story 1** as implemented: patients enter symptoms (with optional filters), the API validates descriptiveness via OpenAI, embeds symptoms and retrieves nearest UPMC doctors from **pgvector**, re-ranks with an **OpenAI chat** call for expertise alignment, and the **React** results experience presents ranked physicians with match explanations, optional distance, and feedback. Primary ownership is **Yuxiang Huang** with secondary **acee3**; the referenced merge activity on core files is dated **2026-03-26** as above.
+This specification documents **User Story 1** as implemented: patients enter symptoms (with optional filters), the API validates descriptiveness via OpenAI, embeds symptoms and retrieves nearest UPMC doctors from **pgvector**, re-ranks with an **OpenAI chat** call for expertise alignment, and the **React** results experience presents ranked physicians with match explanations, optional distance, and feedback. Primary ownership is **acee3** with secondary **Yuxiang Huang**; the referenced merge activity on core files is dated **2026-03-26** as above.
