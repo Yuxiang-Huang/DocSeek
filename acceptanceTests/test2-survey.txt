@@ -1,0 +1,43 @@
+Survey: Plain-Language Symptom Entry
+User Story: As a sick person with no medical knowledge, I want to type my symptoms in
+plain language so that I do not need medical terminology to begin seeking care.
+
+Instructions: Answer each question after completing the acceptance test steps.
+Circle or write your answer below each question.
+
+--------------------------------------------------------------------------------------
+
+Q1. At any point during the process, did you feel that you needed to know a medical
+    term or clinical phrase in order to get the system to accept your input?
+
+    [ ] No  — I was able to describe my symptoms in my own words throughout.
+    [ ] Somewhat  — The system's prompts or feedback made me think medical terms
+                    might produce better results.
+    [ ] Yes  — I felt I needed medical terminology to proceed or get useful results.
+
+    Comments: ________________________________________________________________________
+
+--------------------------------------------------------------------------------------
+
+Q2. How well did the physician recommendations match the symptoms you described?
+
+    [ ] Very well  — The specialties shown were clearly relevant to what I typed.
+    [ ] Somewhat well  — Some results seemed related, but others did not match.
+    [ ] Not well  — The recommendations did not seem related to my description.
+    [ ] No results were returned.
+
+    Comments: ________________________________________________________________________
+
+--------------------------------------------------------------------------------------
+
+Q3. After seeing the results, did you feel you had enough information to take a
+    next step toward seeking care (e.g., view a doctor profile, book an appointment,
+    or know what type of specialist to contact)?
+
+    [ ] Yes  — The results gave me a clear starting point for seeking care.
+    [ ] Partially  — I had some direction but would need more information.
+    [ ] No  — The results did not help me know how to proceed.
+
+    Comments: ________________________________________________________________________
+
+--------------------------------------------------------------------------------------
