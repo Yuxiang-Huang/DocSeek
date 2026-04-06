@@ -7,7 +7,6 @@ import {
 	direct_to_booking,
 	EmergencyCareAlert,
 	getDoctorSearchUrl,
-	getFallbackDistanceMiles,
 	getNextRecommendationLabel,
 	getResultsNavigation,
 	getSymptomValidationUrl,
@@ -24,7 +23,6 @@ import {
 	validateSymptoms,
 	validateSymptomsForDoctorSearch,
 } from "../components/App";
-import { formatDistance } from "../utils/distance";
 
 afterEach(() => {
 	cleanup();
@@ -585,9 +583,7 @@ describe("frontend page flow", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByText(formatDistance(getFallbackDistanceMiles(7, 0))),
-		).toBeTruthy();
+		expect(screen.getByText(/13 mi away/)).toBeTruthy();
 	});
 
 	test("doctor card shows Save for later when callbacks provided and not saved", () => {
