@@ -1,0 +1,27 @@
+DocSeek — Test 9 feedback survey (3 questions)
+User story: As a patient experiencing potentially life-threatening symptoms, I want to be alerted if my condition requires immediate help, so I know to seek immediate care.
+
+Below are three metrics we care about (Lean Startup: clear outcomes; Mom Test: concrete behavior; lecture-style: safety and trust, not vanity usage). Then three **short** questions—no “rate us 1–5” prompts.
+
+---
+
+Three salient metrics
+
+1) Noticeability — Did the user see the warning without hunting for it?
+   - Why: If the alert blends in, the story fails. This is an outcome metric: correct response only matters if the signal is perceived.
+
+2) Comprehension — Did they know what to do next (emergency care vs. keep browsing doctors)?
+   - Why: Willingness to pay for a health app tracks with trust that it won’t quietly steer people the wrong way in scary moments.
+
+3) Trust / tone — Did the message feel responsible, not gimmicky or dismissive?
+   - Why: Over-hype or vague copy erodes retention; calm clarity supports payment and continued use.
+
+---
+
+Survey (keep each answer to a sentence or two)
+
+1) In one glance, was the emergency message easy to spot on the page, or easy to miss?
+
+2) After reading it, what would you do next in real life—call emergency services, keep using the app, or something else?
+
+3) Did the wording feel serious and helpful, or annoying? Why?

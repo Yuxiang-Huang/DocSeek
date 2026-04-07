@@ -1,0 +1,27 @@
+DocSeek — Acceptance test 9 (manual)
+User story: As a patient experiencing potentially life-threatening symptoms, I want to be alerted if my condition requires immediate help, so I know to seek immediate care.
+
+Important safety note
+Use only **pretend** symptom text for this test. Do not use DocSeek for a real emergency—if you or someone else may be in danger, call your local emergency number (for example 911 in the U.S.) or seek emergency care.
+
+What the app does (so you know what to look for)
+DocSeek uses a **keyword check** on what you type (not a medical diagnosis). When a phrase suggests possible emergency care, the app shows a prominent **alert banner** with a warning icon, the title **“Your symptoms may need immediate emergency care,”** text about calling **911** (or your local emergency number) or going to the ER, and a note that DocSeek does not replace emergency services. On the results screen, the app **does not load doctor recommendations** when that check triggers.
+
+Prerequisites
+1. Start the client (typically http://localhost:5173). The API does not need to return doctors for the emergency-only path, but the app should run normally.
+2. Use a desktop or mobile browser with JavaScript enabled.
+
+Part A — Alert on the home page
+1. Open DocSeek and go to the home screen (“How can we help you today?”).
+2. Click in the main symptom box.
+3. Type a short phrase that includes an emergency keyword the app watches for—for example **chest pain** (other examples in the product include phrases like **stroke**, **can’t breathe**, **severe bleeding**—see the app’s tests or code list if you need more).
+4. Confirm a highlighted alert **below** the search area appears (not just small validation text). It should include **911** and emergency room language.
+5. Read the alert once: you should understand you should call emergency services or go to the ER, not rely on DocSeek alone.
+
+Part B — Same concern on the results page (if you reach it)
+1. With the emergency phrase still in the box, press the **arrow** button to search (or clear and re-enter the same phrase, then search—whichever matches your build).
+2. If the app navigates to **Recommended doctors**, check that the **same style of emergency alert** still appears and that **no doctor recommendation cards** load for this symptom (you should not see a normal list of matches).
+3. Use **Start a new search** (or go home) when finished.
+
+Expected result
+For simulated emergency-type wording, you see a clear **immediate-care** warning before or on results, with **911 / ER** guidance, and DocSeek does not present ordinary doctor matching as the main path for that case.
