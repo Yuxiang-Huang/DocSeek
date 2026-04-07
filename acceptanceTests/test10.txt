@@ -1,0 +1,33 @@
+DocSeek — Acceptance test 10 (manual)
+User story: As a patient exploring options, I want to save physicians I am interested in so that I can revisit them later without repeating my search.
+
+What this feature does
+Saved doctors are stored in your **browser** (local storage) on this device. The top nav shows **Saved physicians** and a **count** when you have saves. The **Saved physicians** page lists everyone you saved so you can open profiles or booking links again without running the symptom search again.
+
+Prerequisites
+1. Run the web app (typically http://localhost:5173) with doctor search working so you get at least one recommendation.
+2. Use a normal browser session (not strict private mode that clears storage every time—otherwise saves may not persist the way most users expect).
+3. Optional: note your browser so you can repeat the “come back later” check in Part C.
+
+---
+
+Part A — Save from search results
+1. From the home page, enter symptoms and run a search until you see **Recommended doctors** and a doctor card.
+2. Find **Save for later** on the card (bookmark-style control).
+3. Click **Save for later**. It should change to **Saved** (or show a saved state).
+4. Look at the top navigation: **Saved physicians** should show a **number badge** if your build displays counts.
+
+Part B — Revisit without searching again
+1. Click **Saved physicians** in the nav (wording may include how many are saved).
+2. Confirm you land on **Saved physicians** / **Your saved list** and see the doctor you saved.
+3. Confirm you can read their details and use links such as **View profile** or **Book appointment** when present—without re-entering your symptoms on the home page.
+
+Part C — Persistence (optional but recommended)
+1. Refresh the page or close the tab, open DocSeek again, and go straight to **Saved physicians**.
+2. Confirm your saved doctor is still listed.
+
+Part D — Clean up (optional)
+1. On the saved card, use **Remove from saved** (or the equivalent control) if you want to clear the test data.
+
+Expected result
+You can bookmark doctors from results, open **Saved physicians** later, and still see them without repeating the search—on the same browser and device.
