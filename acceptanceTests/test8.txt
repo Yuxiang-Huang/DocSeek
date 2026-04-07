@@ -1,0 +1,31 @@
+DocSeek — Acceptance test 8 (manual)
+User story: As a user who already matched with a physician, I want to move directly to appointment scheduling so that I do not need to search for that doctor again on UPMC’s website.
+
+How this maps to the app
+DocSeek does not embed a calendar inside the app. When a doctor record includes a profile URL, the recommendation card offers a **Book appointment** link that opens the provider’s UPMC profile in a new browser tab (scheduling is reached from that page). The same link appears when you revisit a doctor from **Saved physicians**, so you can skip searching UPMC’s directory again for someone you already chose.
+
+Prerequisites — get the system ready
+1. Start the web app and API (see repo root README; typical URLs: client http://localhost:5173, API http://localhost:3000).
+2. Ensure the database is loaded with doctor records that include a **profile URL** for at least one doctor. If you never see **Book appointment** on a card, your test data may be missing `profile_url` for those rows—pick another recommendation or repopulate data per the README.
+3. Use a desktop browser that allows opening new tabs. Disable aggressive popup blockers for localhost if the new tab does not open.
+4. This test assumes you are comfortable briefly viewing an external UPMC page to confirm the handoff; you do not need to complete a real booking.
+
+Path A — From a fresh match (results page)
+1. Open DocSeek (for example http://localhost:5173).
+2. Enter symptoms descriptive enough to pass validation, then use the primary **arrow** submit control (screen readers: “Find matching doctors”) to open **Recommended doctors**.
+3. Wait until **Loading recommendations…** disappears and a doctor card appears.
+4. Confirm you see the doctor’s name and “Recommendation X of Y.”
+5. Scroll to the link row under **Rate your visit** (the row with **View profile**, **Book appointment**, and **See the next recommended doctor** when applicable).
+6. If **Book appointment** is visible, click it. A new tab should open to that physician’s profile on UPMC (or the URL stored for that doctor). Confirm the page corresponds to the same name you saw on the card, then close the extra tab when done.
+7. If **Book appointment** is not visible, note that this doctor has no booking/profile URL in data—use **See the next recommended doctor** until you find a card that shows **Book appointment**, or fix test data.
+
+Path B — “Already matched” via Saved physicians (stronger match to the story)
+1. Complete Path A through step 4 so you are viewing a doctor you consider “the one.”
+2. Click **Save for later** (bookmark control) on that card so the doctor is stored locally.
+3. Open **Saved physicians** from the top navigation (wording may include a count in parentheses if you have saves).
+4. On **Saved physicians**, confirm your doctor appears and the subtitle reads “Saved physician X of Y” (or similar).
+5. In the link row for that saved doctor, click **Book appointment**. Confirm a new tab opens to the same provider’s profile as on the card, without using UPMC’s search box to find the name first.
+6. Optional: From the saved card, click **View profile** and confirm it targets the same underlying profile URL behavior as booking (both use the stored profile link when present).
+
+Expected result
+From DocSeek you can open scheduling context on UPMC in one click from a matched recommendation or from **Saved physicians**, without re-typing the doctor’s name into UPMC’s site search—when `profile_url` is present in the data.

@@ -1,0 +1,30 @@
+DocSeek — Test 8 feedback survey (3 questions)
+User story: As a user who already matched with a physician, I want to move directly to appointment scheduling so that I do not need to search for that doctor again on UPMC’s website.
+
+This survey checks whether that story feels “done” enough that someone would pay for the product. Questions avoid gimmicky recommendation scores that invite sarcasm instead of truth. Framing draws on *The Lean Startup* (validated learning and outcomes, not vanity activity), *The Mom Test* (concrete past behavior and specifics), and common product metrics (time saved, error reduction, willingness to repeat).
+
+---
+
+Three salient metrics (what we are trying to learn)
+
+1) Handoff success — Did the user reach the right provider context in one step?
+   - Why: The story’s outcome is “no second search on UPMC.” If the link lands on the wrong person or a generic page, the feature fails regardless of pretty UI. This is a crisp outcome metric (similar to activation or conversion in lean terms), not a count of clicks inside DocSeek.
+
+2) Time and cognitive load vs. the old way — How much hunting did they avoid?
+   - Why: Willingness to pay tracks with replacing a painful workflow (directory search, spelling names, filtering). This maps to “job to be done” completion and retention: if it still feels like two products duct-taped together, value collapses.
+
+3) Repeat use when returning — Would they trust this path when stressed or busy?
+   - Why: Lecture-style engagement is meaningful when it predicts retention: users who would use **Saved physicians → Book appointment** after a first match are evidence the loop works in real life, not only in a demo.
+
+---
+
+Survey (answer in a few sentences each)
+
+Question 1 — Behavior, not slogans
+Last time you tried to book with a specific doctor through a health system website, what did you have to do first (search bar, filters, phone tree)? Compared to that, what happened when you used DocSeek’s **Book appointment**—did it feel like you skipped a whole chapter, or did you still end up doing the old steps anyway?
+
+Question 2 — Correct-doctor anxiety without asking “Was our link good?”
+When the new tab opened, what was the first thing you checked to be sure you were still looking at the same human being—not the hospital brand page, not a namesake? Did anything make you doubt you were in the right place?
+
+Question 3 — Money talk without NPS
+If DocSeek charged a small monthly fee on top of what you already pay for care, what would **Book appointment** (or the saved-doctor path) have to guarantee for you to shrug and pay—accurate profile, fewer dead clicks, something else? If you would never pay, what would have to change first?
