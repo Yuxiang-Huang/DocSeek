@@ -1,0 +1,30 @@
+DocSeek — Test 7 feedback survey (3 questions)
+User story: As a patient who has completed an appointment, I want to provide feedback on my experience so that I can help improve future physician recommendations.
+
+This survey checks whether that story feels “done” enough that someone would pay for the product. Questions avoid gimmicky scales (for example, “How likely are you to recommend…”) that invite sarcasm instead of truth. Framing draws on *The Mom Test* (concrete past behavior, not flattery) and *The Lean Startup* (actionable learning, not vanity metrics).
+
+---
+
+Three salient metrics (what we are trying to learn)
+
+1) Task completion — Did the user successfully submit feedback without confusion?
+   - Why: In lean terms this is a core outcome metric: the “feedback loop” only exists if people finish the flow. Abandonment at submit is a direct signal the story failed, independent of opinions about your brand.
+
+2) Perceived usefulness of the feedback — Does the user believe their input could change something that matters?
+   - Why: Willingness to pay correlates with believing the product closes the loop (recommendations or quality improve). This is closer to a “value” metric than raw star averages on your dashboard.
+
+3) Effort cost right after a visit — Was the interaction light enough to imagine doing it when tired?
+   - Why: Post-appointment moments are high friction. If the flow feels long or patronizing, retention of feedback—and of the product—drops. This maps to engagement quality and repeat use, not just a one-off demo.
+
+---
+
+Survey (answer in a few sentences each)
+
+Question 1 — Behavior, not slogans
+After a real doctor’s appointment, have you ever wanted to leave feedback somewhere (portal, survey, Google) and just… didn’t? What usually stops you? Compared to that, how did this “Rate your visit” step feel—more like a chore, or something you’d actually finish on your phone in the parking lot?
+
+Question 2 — Trust the loop without asking “Do you trust us?”
+If your rating and comment were actually used to tune which doctors get suggested next time, what would you need to see in the product to believe that—not marketing copy, but something concrete (or what would make you assume it was ignored)?
+
+Question 3 — Money talk without a cheesy NPS
+Imagine this feedback feature were part of a paid DocSeek plan. Under what conditions would paying feel reasonable—if any? (For example: saves you a bad match, improves rankings you care about, or you’d still rely on free tools.) If you would not pay, what would have to change first?

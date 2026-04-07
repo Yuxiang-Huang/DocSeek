@@ -1,0 +1,35 @@
+DocSeek — Acceptance test 7 (manual)
+User story: As a patient who has completed an appointment, I want to provide feedback on my experience so that I can help improve future physician recommendations.
+
+How this maps to the app
+In DocSeek, visit feedback is collected on the doctor recommendation screen. The section is labeled “Rate your visit” and appears on the card for the doctor you are viewing. In a real life, you would use it after you had actually seen that provider; for this test, you will use the same controls to confirm the feature works end to end.
+
+Prerequisites — get the system ready
+1. Start the application stack so both the web UI and API are running. From the repo root, follow the root README (for example `docker compose up`, or run the client and API as described in `client/README.md` and `api/README.md`).
+2. Confirm the web app loads in your browser (typically http://localhost:5173).
+3. Confirm the API is reachable (typically http://localhost:3000) and that the database is running with the schema that includes a `feedback` table, so submitted ratings can be saved. If feedback submission fails with a server error, check API logs and that `DATABASE_URL` (or your compose env) points at a migrated database.
+4. Load doctor data so a search returns at least one recommendation (see root README “Database Setup For New Devs” if you need to repopulate from the checked-in data).
+5. Use a modern desktop browser with JavaScript enabled. You do not need to log in for this flow unless your deployment adds authentication.
+
+What you will need
+- A few minutes of attention.
+- Optional: a short sentence you can paste as a comment (you can also leave the comment blank).
+
+Detailed steps — provide feedback after “your visit”
+1. Open DocSeek in your browser (for example http://localhost:5173). You should see the home page with the heading “How can we help you today?” and a large text area for symptoms.
+2. In the symptom text area, type a description of a health concern that is allowed by the app (not an emergency phrase that blocks search—see test data or use a routine example such as “Ongoing knee pain when walking up stairs”). If the app asks you to add more detail, expand your description and try again until you can proceed.
+3. Submit the search using the same button the home page uses to run the doctor search (the control that advances you to recommendations). Wait until you are no longer on the home page.
+4. You should land on the “Recommended doctors” results page. Wait until you see “Loading recommendations…” disappear and a doctor card appears (or stop if you see an error message that no doctors matched—in that case fix data or symptoms and repeat from step 2).
+5. Read the top of the doctor card. You should see the doctor’s name, “Recommendation X of Y,” and other details. This is the doctor you are giving feedback about; imagine you have already completed an appointment with this person.
+6. Scroll down within the main content until you find a section whose heading text is “Rate your visit.” It sits above a row of star buttons and an optional text box.
+7. Click one of the star buttons (1 through 5). The stars you selected should appear highlighted or filled compared to the others. This is your rating for the visit.
+8. (Optional) Click in the multiline text box whose placeholder is “Optional comment…” and type a short honest note about the experience you are pretending to have had (for example what went well or what was confusing). You may skip this step to test submission with rating only.
+9. Click the button labeled “Submit feedback.”
+10. Confirm the form is replaced by a short thank-you message: “Thanks for your feedback!” If you still see the star row and “Submit feedback,” note any red error text under the form and report it (for example network or server errors).
+11. Optional extra checks:
+    a) Before choosing stars, confirm that “Submit feedback” is disabled or cannot succeed without a rating (try clicking it if enabled—behavior should require a star selection first).
+    b) If more than one doctor is in your list, click “See the next recommended doctor” (or similar) to move to another recommendation, scroll to “Rate your visit” again, and submit a second rating to ensure feedback is tied to the visible doctor.
+12. When you are done, you can close the tab or use “Start a new search” to return home.
+
+Expected result
+You can reach a doctor’s card after a successful search, use “Rate your visit” to choose 1–5 stars, optionally add a comment, submit successfully, and see the thank-you confirmation—meaning you could contribute feedback that the system can store for improving future recommendations.
