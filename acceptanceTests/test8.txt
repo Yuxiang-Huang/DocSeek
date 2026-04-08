@@ -4,28 +4,137 @@ User story: As a user who already matched with a physician, I want to move direc
 How this maps to the app
 DocSeek does not embed a calendar inside the app. When a doctor record includes a profile URL, the recommendation card offers a **Book appointment** link that opens the provider’s UPMC profile in a new browser tab (scheduling is reached from that page). The same link appears when you revisit a doctor from **Saved physicians**, so you can skip searching UPMC’s directory again for someone you already chose.
 
-Prerequisites — get the system ready
-1. Start the web app and API (see repo root README; typical URLs: client http://localhost:5173, API http://localhost:3000).
-2. Ensure the database is loaded with doctor records that include a **profile URL** for at least one doctor. If you never see **Book appointment** on a card, your test data may be missing `profile_url` for those rows—pick another recommendation or repopulate data per the README.
-3. Use a desktop browser that allows opening new tabs. Disable aggressive popup blockers for localhost if the new tab does not open.
-4. This test assumes you are comfortable briefly viewing an external UPMC page to confirm the handoff; you do not need to complete a real booking.
+---
+
+Local setup — run DocSeek on your machine (not deployed)
+
+This test requires a **working doctor search** and, for many cards, a stored **`profile_url`** so **Book appointment** appears. Plan on running the **full stack** (Postgres + API + client) and **loading sample doctor data** from the repo.
+
+### A. What to install first
+
+1. **Git** — to clone the repository.
+2. **Docker Desktop** (or Docker Engine with Compose v2) — runs Postgres (pgvector), the Bun API, and the Vite client. Start Docker and wait until it is running.
+3. **OpenAI API access** — symptom validation and semantic doctor search use OpenAI from the API. You need an API key (billing may apply per OpenAI’s pricing).
+4. **uv** — the documented way to run the database repopulate script. Install from https://docs.astral.sh/uv/getting-started/installation/
+
+### B. Get the code
+
+1. Clone the DocSeek repository (or download and unzip it).
+2. Open a terminal and **cd** into the **repository root** (the folder that contains `client/`, `api/`, `data-scripts/`, and `compose.yml`).
+
+### C. Create environment configuration
+
+1. In the **repository root**, copy the example environment file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Open `.env` in a text editor.
+
+3. Set **`OPENAI_API_KEY=`** to your real key. The API **will not start** without it; it reads variables from the **repo root** `.env` when the project is mounted into containers.
+
+4. Keep **`DATABASE_URL`** for **host-run scripts** (your Mac/PC) as in `.env.example`, typically:
+
+   `postgresql://docseek:docseek@localhost:55432/docseek_upmc`
+
+   That matches Postgres when Compose maps container port **5432** to host **55432** (see `compose.yml`). The API service inside Compose sets its own `DATABASE_URL` to reach the `postgres` service—you do not need to change that for Docker.
+
+5. Keep **`CORS_ALLOWED_ORIGINS`** including:
+
+   `http://localhost:5173,http://127.0.0.1:5173`
+
+6. Save `.env`.
+
+### D. Start Postgres, API, and client with Docker Compose
+
+1. From the **repository root**, run:
+
+   ```bash
+   docker compose up
+   ```
+
+   If your Docker setup needs an explicit file name:
+
+   ```bash
+   docker compose -f compose.yml up
+   ```
+
+2. First run can take several minutes (image downloads, `bun install` inside `api` and `client`).
+
+3. When services are healthy, expect:
+
+   - **Client:** http://localhost:5173  
+   - **API:** http://localhost:3000  
+   - **Postgres (from host):** localhost:55432  
+
+4. Leave the terminal attached, or use `docker compose up -d` and follow logs with `docker compose logs -f`.
+
+5. **Postgres collation / stale volume:** if you see a collation version mismatch, reset once (from the root `README.md`):
+
+   ```bash
+   docker compose down -v
+   rm -rf data-scripts/.docker-postgres
+   docker compose up
+   ```
+
+### E. Load doctor data (required for this test)
+
+You need doctors in Postgres so **Recommended doctors** returns cards. You also need **`profile_url`** populated on at least one doctor for **Book appointment** to show (otherwise only **View profile** / booking may be missing).
+
+1. Open a **second terminal** on your **host** (not inside a container).
+
+2. Ensure Compose is up and Postgres is listening on **localhost:55432**.
+
+3. Run:
+
+   ```bash
+   cd data-scripts
+   uv run python repopulate_database.py
+   ```
+
+4. Wait until it completes without errors. It loads from `data-scripts/upmc_doctors.json` and refreshes specialty embeddings (calls OpenAI over the network).
+
+5. If **Book appointment** never appears on any recommendation, your JSON rows may lack `profile_url` for those providers—try another doctor with **See the next recommended doctor** or inspect the data file; do not re-scrape unless you intend to (see root `README.md`).
+
+### F. Verify the stack before the acceptance test
+
+1. In a browser, open **http://localhost:5173** — you should see the DocSeek home page (“How can we help you today?”).
+2. Run a quick symptom search: you should reach **Recommended doctors** with at least one card after **Loading recommendations…** finishes.
+3. If search fails, check API container logs, `.env` `OPENAI_API_KEY`, and that repopulate finished successfully.
+
+---
+
+Prerequisites specific to this test
+
+1. **Desktop browser** that allows **new tabs** (and is not blocking pop-ups for localhost if the tab fails to open).
+2. **Comfort** briefly opening an external UPMC (or stored) URL—you do **not** need to complete a real booking.
+3. **Same browser** for **Saved physicians** as in other tests: saves use **localStorage** on this device.
+
+---
 
 Path A — From a fresh match (results page)
-1. Open DocSeek (for example http://localhost:5173).
-2. Enter symptoms descriptive enough to pass validation, then use the primary **arrow** submit control (screen readers: “Find matching doctors”) to open **Recommended doctors**.
+1. Open DocSeek at **http://localhost:5173**.
+2. Enter symptoms descriptive enough to pass validation, then use the primary **round arrow** submit control (screen readers: “Find matching doctors”) to open **Recommended doctors**.
 3. Wait until **Loading recommendations…** disappears and a doctor card appears.
 4. Confirm you see the doctor’s name and “Recommendation X of Y.”
 5. Scroll to the link row under **Rate your visit** (the row with **View profile**, **Book appointment**, and **See the next recommended doctor** when applicable).
-6. If **Book appointment** is visible, click it. A new tab should open to that physician’s profile on UPMC (or the URL stored for that doctor). Confirm the page corresponds to the same name you saw on the card, then close the extra tab when done.
-7. If **Book appointment** is not visible, note that this doctor has no booking/profile URL in data—use **See the next recommended doctor** until you find a card that shows **Book appointment**, or fix test data.
+6. If **Book appointment** is visible, click it. A new tab should open to that physician’s profile (URL from your data). Confirm the page matches the name on the card, then close the tab when done.
+7. If **Book appointment** is not visible, this row may only show **View profile** or neither—use **See the next recommended doctor** until **Book appointment** appears, or confirm `profile_url` in your dataset.
 
 Path B — “Already matched” via Saved physicians (stronger match to the story)
 1. Complete Path A through step 4 so you are viewing a doctor you consider “the one.”
-2. Click **Save for later** (bookmark control) on that card so the doctor is stored locally.
-3. Open **Saved physicians** from the top navigation (wording may include a count in parentheses if you have saves).
-4. On **Saved physicians**, confirm your doctor appears and the subtitle reads “Saved physician X of Y” (or similar).
-5. In the link row for that saved doctor, click **Book appointment**. Confirm a new tab opens to the same provider’s profile as on the card, without using UPMC’s search box to find the name first.
-6. Optional: From the saved card, click **View profile** and confirm it targets the same underlying profile URL behavior as booking (both use the stored profile link when present).
+2. Click **Save for later** on that card so the doctor is stored locally.
+3. Open **Saved physicians** from the top navigation (label may include a saved count).
+4. On **Saved physicians**, confirm your doctor appears (“Saved physician X of Y”).
+5. In the link row for that saved doctor, click **Book appointment**. Confirm a new tab opens to the same provider’s profile without using UPMC’s site search to find the name first.
+6. Optional: Click **View profile** and confirm it uses the same stored profile URL behavior when both links are present.
 
 Expected result
-From DocSeek you can open scheduling context on UPMC in one click from a matched recommendation or from **Saved physicians**, without re-typing the doctor’s name into UPMC’s site search—when `profile_url` is present in the data.
+From DocSeek you can open scheduling context in one click from a matched recommendation or from **Saved physicians**, without re-typing the doctor’s name into UPMC’s site search—when `profile_url` is present in the data.
+
+---
+
+Optional: run client and API without Docker (advanced)
+
+If you already run Postgres on **localhost:55432** with the same database name and credentials as `.env.example`, install **Bun**, run `bun install` and `bun run dev` in `api/` and `client/`, set **`VITE_API_BASE_URL=http://localhost:3000`** for the client, and keep **`OPENAI_API_KEY`** in the repo root `.env`. Prefer Docker Compose unless you maintain a native setup.
