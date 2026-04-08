@@ -1,0 +1,23 @@
+DocSeek — Test 10 feedback survey (3 questions)
+User story: As a patient exploring options, I want to save physicians I am interested in so that I can revisit them later without repeating my search.
+
+Three metrics (Lean Startup: outcomes over vanity; Mom Test: real behavior; lecture-style: retention and “job done”)
+
+1) Save-and-return success — Could they find a saved doctor again without redoing the search?
+   - Why: This is the story’s core outcome. Clicks inside the app matter only if the loop closes.
+
+2) Persistence confidence — After closing the tab or coming back tomorrow, is the list still there?
+   - Why: Willingness to pay tracks with trust that work isn’t lost; this maps to retention and perceived reliability.
+
+3) Effort vs. workarounds — Is this easier than screenshots, spreadsheets, or open browser tabs?
+   - Why: If it isn’t clearly better than free habits, paid conversion rarely follows.
+
+---
+
+Survey (keep answers short)
+
+1) Last time you shortlisted doctors outside this app, what did you use—notes app, screenshots, bookmarks? Was saving inside DocSeek simpler or not really?
+
+2) After you saved someone, did you trust they’d still be there when you came back, or did you worry you’d have to search again?
+
+3) If DocSeek cost money, what would “saved physicians” have to do for you to pay—sync across devices, reminders, something else, or would free tools always be enough?
