@@ -1,0 +1,9 @@
+Metric 1:
+Explanation Clarity Score (1-5 average); Average rating for clarity of the "Why recommended" section.
+If users cannot explain back why a recommendation appeared, trust will remain low regardless of ranking quality. Clarity score gives a quantifiable read on comprehension and is easy to segment by symptom category or specialty. It provides a concrete target for improving explanation text quality.
+
+Metric 2: 
+Rating from Trust from Explanation; Percent of sessions where users report confidence increased after reading the explanation. The feature exists to increase confidence, so this metric directly tests whether the explanation changes user belief. It avoids vanity output metrics like "explanation viewed" and focuses on outcome impact. This aligns with Lean Startup's emphasis on validated value, not feature presence.
+
+Metric 3: Symptom-Explanation Alignment Rate; Percent of sessions marked "very well aligned" between entered symptoms and explanation/specialty.
+Users trust explanations when they feel personally relevant to what they typed. Alignment rate tests whether the explanation connects symptom language to specialty logic in a believable way. It is especially useful for detecting hallucination-like or generic explanation failure modes.
