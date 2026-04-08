@@ -1,25 +1,123 @@
 DocSeek — Acceptance test 6 (manual)
 User story: As a patient looking for something specific, I want to filter my recommendations by my location and availability, so that I can only see doctors tailored to my preferences.
 
-Prerequisites (get the app running)
-1. From the repository root, ensure the stack is up (see root README). Typical local URLs: web app http://localhost:5173, API http://localhost:3000.
-2. Ensure the database is populated so searches return doctors (e.g. follow README “Database Setup For New Devs” using the checked-in data script if needed).
-3. Use a desktop browser with JavaScript enabled. If the browser prompts for location access on the results page, you may allow it so distance next to each doctor’s address is meaningful; the test still works if you deny it.
+---
+
+Local setup — run DocSeek on your machine (not deployed)
+
+This test needs the **client**, **API**, **Postgres**, **OpenAI** (symptom validation and doctor search), and **loaded doctor data** so results and filters behave realistically.
+
+### A. What to install first
+
+1. **Git** — to clone the repository.
+2. **Docker Desktop** (or Docker Engine with Compose v2) — runs Postgres (pgvector), the Bun API, and the Vite client. Start Docker and wait until it is fully running.
+3. **OpenAI API access** — the API uses OpenAI for validation and search. You need an **`OPENAI_API_KEY`** in `.env` (billing may apply per OpenAI).
+4. **uv** — documented way to load sample doctors. Install from https://docs.astral.sh/uv/getting-started/installation/
+
+### B. Get the code
+
+1. Clone the DocSeek repository (or download and unzip it).
+2. Open a terminal and **cd** into the **repository root** (folder containing `client/`, `api/`, `data-scripts/`, and `compose.yml`).
+
+### C. Create environment configuration
+
+1. In the **repository root**, copy the example file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` in a text editor.
+
+3. Set **`OPENAI_API_KEY=`** to your real key. The API **will not start** without it; it reads the repo root `.env` when the project is mounted into containers.
+
+4. For **host-run scripts** (repopulate on your machine), keep **`DATABASE_URL`** as in `.env.example`, typically:
+
+   `postgresql://docseek:docseek@localhost:55432/docseek_upmc`
+
+   That matches Postgres published on host port **55432** by Compose. The API container uses its own internal `DATABASE_URL` to reach the `postgres` service.
+
+5. Keep **`CORS_ALLOWED_ORIGINS`** including `http://localhost:5173` and `http://127.0.0.1:5173`.
+
+6. Save `.env`.
+
+### D. Start Postgres, API, and client
+
+1. From the **repository root**:
+
+   ```bash
+   docker compose up
+   ```
+
+   If needed:
+
+   ```bash
+   docker compose -f compose.yml up
+   ```
+
+2. First launch may take several minutes (image pull, `bun install` in `api` and `client`).
+
+3. When healthy:
+
+   - **Web app:** http://localhost:5173  
+   - **API:** http://localhost:3000  
+
+4. **Collation / old Postgres volume:** if you see a collation mismatch warning, reset once (root `README.md`):
+
+   ```bash
+   docker compose down -v
+   rm -rf data-scripts/.docker-postgres
+   docker compose up
+   ```
+
+### E. Load doctor data (required for this test)
+
+You need doctors in the database with **locations** and **accepting_new_patients** values so location and availability filters can do something visible.
+
+1. On your **host**, with Compose running, open a second terminal:
+
+   ```bash
+   cd data-scripts
+   uv run python repopulate_database.py
+   ```
+
+2. Wait until it completes without errors (loads `upmc_doctors.json`, refreshes embeddings; requires network access to OpenAI).
+
+### F. Verify before you test
+
+1. Open **http://localhost:5173** and confirm the home page loads (“How can we help you today?”).
+2. Run a quick search **without** filters: you should get **Recommended doctors** after **Loading recommendations…**
+3. If search fails, check API logs and `.env` `OPENAI_API_KEY`.
+
+---
+
+Prerequisites specific to this test
+
+1. **Desktop browser** with JavaScript enabled.
+2. **Geolocation (optional):** if the browser asks for location on the results page, **Allow** if you want real distances next to addresses; **Deny** is OK—the app may show a fallback distance. Filtering still works.
+
+---
 
 Steps
-1. Open the DocSeek home page in your browser (usually http://localhost:5173).
-2. In the main symptom field, describe something specific you want care for (for example one of the suggested chips, or your own short description). Enter enough detail that validation allows you to continue (if the app asks for more detail, add a sentence and submit again until you proceed).
-3. Scroll to the section titled “Filter by your preferences.”
-4. In “Location (city, state, or ZIP),” enter a real area that should match doctors in your dataset (the placeholder suggests a format like “Pittsburgh, PA”). Leave other fields as needed for the next step.
-5. Check the box “Only show doctors accepting new patients” if you want the list limited to doctors who are accepting new patients; leave it unchecked if you want no availability filter.
-6. Submit the search (same control you use to run the doctor search from the home page) so you land on the “Recommended doctors” results page.
-7. Confirm the results page shows your search symptoms and, when filters were applied, a line such as “Filtered by:” followed by your location and/or “Accepting new patients,” plus a “Refine filters” control.
-8. On the first recommendation card, read the doctor’s practice location line. If you allowed browser location, note the distance shown next to the address; otherwise note that a distance may still appear using app fallback logic.
-9. Note the availability line at the top of the card (“Accepting new patients” vs. “Check availability”) and confirm it matches your availability filter when that filter was turned on.
-10. Click “See the next recommended doctor” (or the equivalent control) to move through at least one more recommendation and confirm each card still reflects the same filtered set.
-11. Click “Refine filters.” Change the location string and/or toggle “Only show doctors accepting new patients,” then click “Apply filters.”
-12. Confirm the URL or on-screen “Filtered by” summary updates, the list reloads, and the first recommendation again reflects your new constraints (or you see the empty state message if no doctors match).
-13. Optional: Click “Start a new search,” return home, and repeat steps 2–6 with different location/availability choices to confirm behavior is consistent.
+1. Open **http://localhost:5173**.
+2. In the main symptom field, describe what you want care for (e.g. a suggested chip or your own text). Add detail until validation lets you continue.
+3. Scroll to **Filter by your preferences.**
+4. In **Location (city, state, or ZIP),** enter an area that plausibly matches your dataset (placeholder example: **Pittsburgh, PA**).
+5. Check **Only show doctors accepting new patients** if you want that constraint; leave unchecked for no availability filter.
+6. Submit with the **round arrow** on the home search bar (screen readers: **Find matching doctors**) so you land on **Recommended doctors.**
+7. Confirm the results page shows your symptoms and, when filters were used, **Filtered by:** your location and/or **Accepting new patients**, plus **Refine filters.**
+8. On the first card, read the practice **location** line; if you allowed geolocation, note **distance**; otherwise note fallback distance behavior.
+9. Read the availability line (**Accepting new patients** vs. **Check availability**) and confirm it matches the checkbox when that filter was on.
+10. Click **See the next recommended doctor** at least once; each card should still match the same filtered set.
+11. Click **Refine filters.** Change location and/or **Only show doctors accepting new patients**, then **Apply filters.**
+12. Confirm **Filtered by** (and/or the URL) updates, the list reloads, and the first recommendation matches the new filters—or you see the empty-state message if nothing matches.
+13. Optional: **Start a new search**, return home, repeat steps 2–6 with different filters.
 
 Expected result
-You can constrain recommendations by location and by whether the doctor is accepting new patients before and after the initial search, see those constraints reflected on the results page, and browse recommendations that honor those preferences (or see a clear message when no doctor matches).
+You can constrain recommendations by **location** and **accepting new patients** before and after the first search, see those constraints on the results page, and browse a filtered list (or a clear no-match message).
+
+---
+
+Optional: run without Docker (advanced)
+
+With Postgres on **localhost:55432** matching `.env.example`, install **Bun**, run `bun install` and `bun run dev` in `api/` and `client/`, set **`VITE_API_BASE_URL=http://localhost:3000`**, and keep **`OPENAI_API_KEY`** in the repo root `.env`. Prefer Docker Compose unless you use a native workflow.
