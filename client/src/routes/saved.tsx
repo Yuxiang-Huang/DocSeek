@@ -12,7 +12,7 @@ export const Route = createFileRoute("/saved")({
 	component: SavedRoutePage,
 });
 
-function SavedRoutePage() {
+export function SavedRoutePage() {
 	const { savedDoctors, removeSavedDoctor } = useSavedPhysicians();
 	const [activeIndex, setActiveIndex] = useState(0);
 
@@ -77,7 +77,7 @@ type SavedDoctorCardProps = {
 	onUnsave: (doctor: Doctor) => void;
 };
 
-function SavedDoctorCard({
+export function SavedDoctorCard({
 	doctors,
 	activeDoctorIndex,
 	onNextDoctor,
