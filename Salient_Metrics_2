@@ -1,0 +1,11 @@
+Metric 1: 
+Plain-Language Submission Success Rate;Percent of users who complete symptom submission in non-clinical language without switching to jargon.
+This is the clearest success test for the user story itself: can people proceed in their own words. It is behavior-first (Mom Test) because it measures actual user input patterns, not self-reported comfort. If this metric drops, the team can immediately review prompts, placeholders, and validation copy.
+
+Metric 2: 
+Input Friction Rate;Percent of sessions with more than one failed or blocked symptom submission before results.
+Repeated failed submissions are one of the strongest signs that users are confused or being over-constrained. This metric is sensitive to wording issues, validation strictness, and unclear recovery guidance. It is actionable because each failed step can be traced to a specific UI message or rule.
+
+Metric 3: 
+Actionable Next-Step Rate;Percent of sessions where users take a next action from results (open profile, click booking, save physician).
+The product does not create value when users only submit text; value appears when they move toward care. This metric ties the story to downstream behavior and prevents vanity success ("input accepted") without user progress. It is a strong leading indicator of real-world utility.
