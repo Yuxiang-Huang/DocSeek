@@ -1,0 +1,223 @@
+User Story: As a patient seeking care, I want to be matched with the most relevant UPMC physician
+based on expertise so that I can find the best-qualified doctor for my issue.
+
+======================================================================================
+PREREQUISITES: System Setup
+======================================================================================
+
+Complete ALL of the following before beginning the test steps.
+
+--- 1. REQUIRED TOOLS ---
+
+Ensure the following are installed on your machine:
+  - Bun (JavaScript runtime): https://bun.sh
+  - Docker and Docker Compose (recommended) OR PostgreSQL 16+ with pgvector extension
+  - An OpenAI API key with access to the text-embedding-3-small and gpt-4o-mini models
+
+--- 2. ENVIRONMENT CONFIGURATION ---
+
+a. In the root of the DocSeek repository, create a file named ".env" (if it does not
+   already exist). You can copy the provided example:
+
+     cp .env.example .env
+
+b. Open .env in a text editor and fill in the required values:
+
+     DATABASE_URL=postgresql://docseek:docseek@localhost:55432/docseek_upmc
+     CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+     OPENAI_API_KEY=<your OpenAI API key here>
+     OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+     OPENAI_BASE_URL=https://api.openai.com/v1
+     OPENAI_CHAT_MODEL=gpt-4o-mini
+
+   IMPORTANT: The OPENAI_API_KEY must be valid and have sufficient quota. Without it,
+   search and symptom validation will not function.
+
+--- 3. START THE APPLICATION ---
+
+OPTION A — Docker Compose (recommended, starts everything automatically):
+
+  From the repository root, run:
+
+    docker compose up
+
+  This starts:
+    - PostgreSQL 16 database with pgvector on port 55432
+    - The backend API on http://localhost:3000
+    - The frontend client on http://localhost:5173
+
+  Wait until you see log output from both the API and client services indicating
+  they are ready before proceeding.
+
+OPTION B — Manual start (if not using Docker):
+
+  1. Start a PostgreSQL 16+ instance with the pgvector extension enabled,
+     accessible at the DATABASE_URL configured in your .env file.
+
+  2. Start the backend API:
+       cd api
+       bun install
+       bun run dev
+     The API will be available at http://localhost:3000.
+
+  3. In a separate terminal, start the frontend:
+       cd client
+       bun install
+       bun --bun run dev
+     The frontend will be available at http://localhost:5173.
+
+--- 4. LOAD PHYSICIAN DATA INTO THE DATABASE ---
+
+The database must be populated with UPMC physician records and specialty embeddings
+before searches will return results. Run the following from the repository root:
+
+  cd data-scripts
+  uv run python repopulate_database.py
+
+  NOTE: This script requires Python 3.12+ and the "uv" package manager.
+  It reads from the pre-scraped "data-scripts/upmc_doctors.json" file and uses
+  your OPENAI_API_KEY to generate vector embeddings for each physician's specialty.
+  This step may take several minutes depending on the number of records.
+
+--- 5. VERIFY THE APPLICATION IS READY ---
+
+Open http://localhost:5173 in your web browser. You should see the DocSeek home page
+with the heading "How can we help you today?" and a symptom input text area.
+If the page does not load or shows an error, check the terminal output for both the
+API and client processes before continuing.
+
+======================================================================================
+TEST INSTRUCTIONS: Physician Matching by Expertise
+======================================================================================
+
+PART 1: Navigate to the Application
+-------------------------------------
+1. Open your web browser and go to: http://localhost:5173
+2. Confirm the DocSeek home page is visible with the heading
+   "How can we help you today?" and a text area for describing your symptoms.
+
+PART 2: Enter Your Symptoms
+----------------------------
+3. Click inside the symptom input text area (placeholder text: "I have chest pains").
+4. Type a clear, descriptive description of your medical issue or symptoms.
+
+   GOOD examples:
+     "I have been experiencing persistent headaches and blurred vision for a week."
+     "I have sharp knee pain when climbing stairs that has worsened over two months."
+     "I have recurring stomach pain after meals and occasional nausea."
+
+   BAD examples (too vague — the system will reject and ask for more detail):
+     "I feel sick."
+     "Pain."
+     "I don't feel well."
+
+   NOTE: If your description is not specific enough, a feedback message will appear
+   below the text area asking you to be more descriptive. You have up to 3 attempts
+   to refine your description before the system proceeds automatically.
+
+   NOTE ON EMERGENCIES: If your symptoms describe a life-threatening emergency
+   (e.g., chest pain, difficulty breathing, stroke symptoms), the system will
+   display an emergency alert and will NOT proceed with a search. Follow the
+   on-screen instructions and contact emergency services in that case.
+
+PART 3: (Optional) Apply Filters
+----------------------------------
+5. Below the symptom input, you may fill in the optional filter fields:
+
+   a. LOCATION FILTER:
+      - Click the "Location" text input (hint text: "Show doctors near this area").
+      - Type a city, state, or ZIP code (e.g., "Pittsburgh, PA" or "15213").
+      - Leave blank to see results from all locations.
+
+   b. ACCEPTING NEW PATIENTS FILTER:
+      - Check "Only show doctors accepting new patients" to limit results to
+        physicians currently taking new patients.
+      - Leave unchecked to see all matched physicians regardless of availability.
+
+PART 4: Submit Your Search
+---------------------------
+6. Click the right-arrow (→) submit button to the right of the symptom input field.
+7. Wait a few seconds while the system validates your symptoms and searches for
+   matching physicians.
+   - If the system asks you to refine your symptoms, update the text area with more
+     specific detail and click submit again (up to 3 times).
+
+PART 5: Review Your Matched Physicians
+----------------------------------------
+8. You will be taken to the Results page. At the top, confirm:
+   - Your original symptom description is displayed as a summary.
+   - Any active filters (location, accepting new patients) are shown.
+
+9. The page displays a physician recommendation card. Review:
+
+   a. DOCTOR NAME: The physician's full name shown as the card heading.
+
+   b. SPECIALTY: The physician's primary medical specialty.
+
+   c. MATCH QUALITY BADGE: Indicates expertise alignment with your symptoms:
+        "Strong match"   — highest relevance (similarity score >= 0.55)
+        "Good match"     — solid relevance  (similarity score >= 0.40)
+        "Possible match" — lower relevance  (similarity score <  0.40)
+
+   d. WHY RECOMMENDED: A brief explanation of why this doctor matches your symptoms,
+      including the matched specialty area(s).
+
+   e. AVAILABILITY: "Accepting new patients" or "Check availability."
+
+   f. LOCATION & DISTANCE: The doctor's primary practice location and approximate
+      distance from you (if browser location access is granted).
+
+   g. PHONE NUMBER: The doctor's primary contact number (if available).
+
+10. To view additional matched physicians ranked by relevance, click
+    "See the next recommended doctor" at the bottom of the card.
+    - The counter (e.g., "Recommendation 2 of 8") shows your position in the list.
+    - Physicians are ordered from most to least relevant based on expertise match
+      with your described symptoms.
+
+PART 6: (Optional) Save a Physician for Later
+-----------------------------------------------
+11. Click the bookmark icon ("Save for later") on any physician card to save them.
+    - The button changes to "Saved" to confirm.
+    - Access saved physicians at any time via "Saved physicians" in the top navigation.
+
+PART 7: (Optional) View Profile or Book an Appointment
+-------------------------------------------------------
+12. Click "View profile" to open the physician's full UPMC profile in a new tab.
+13. Click "Book appointment" to open the UPMC scheduling page for that physician.
+
+PART 8: (Optional) Provide Feedback
+-------------------------------------
+14. Rate the match quality using the star buttons (1–5) on the card.
+15. Optionally add a comment in the text field that appears.
+16. Click "Submit" to send your feedback.
+
+PART 9: (Optional) Refine Filters or Start a New Search
+---------------------------------------------------------
+17. Click "Refine filters" near the top of the Results page to adjust your location
+    or availability filter without re-entering your symptoms.
+18. Click "Start a new search" at the top of the Results page to return to the home
+    page and begin a new query.
+
+======================================================================================
+EXPECTED OUTCOMES
+======================================================================================
+
+- After submitting a descriptive symptom query, a ranked list of UPMC physicians
+  is displayed, with the most expertise-relevant doctor shown first.
+- Each subsequent physician (via "See the next recommended doctor") should be
+  progressively less closely matched to the described symptoms.
+- Match quality badges accurately reflect the degree of specialty alignment.
+- Applying filters narrows results to only physicians meeting those criteria,
+  while preserving the expertise-based ranking order among remaining results.
+
+======================================================================================
+EDGE CASES TO VERIFY
+======================================================================================
+
+- Vague symptom input: The system should reject it and prompt for more detail
+  (up to 3 times before proceeding automatically).
+- No matching results: If no physicians match the given filters, the page should
+  display an empty-state message and offer the option to relax filters.
+- Emergency symptoms: The system should display an emergency alert and not show
+  physician recommendations.
