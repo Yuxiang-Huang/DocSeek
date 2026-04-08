@@ -1,0 +1,47 @@
+User Story: As a patient who is living somewhere new, I want to view the distance the
+physician is from me, so I can understand their locations relative to me and choose a
+convenient option.
+
+======================================================================================
+FEEDBACK SURVEY
+======================================================================================
+
+Please answer each question after completing the acceptance test steps in test5.txt.
+
+--------------------------------------------------------------------------------------
+Question 1
+--------------------------------------------------------------------------------------
+Was a distance value (e.g., "3.2 mi away") visible on every physician card you
+reviewed during your search?
+
+  [ ] Yes — a distance was shown on every card
+  [ ] Partially — a distance was shown on some cards but missing on others
+  [ ] No — no distance values appeared on any card
+
+--------------------------------------------------------------------------------------
+Question 2
+--------------------------------------------------------------------------------------
+Did the displayed distances give you a clear sense of how far each physician is from
+your current location, allowing you to compare options by convenience?
+
+  [ ] Yes — the distances were clear and helped me compare physicians by proximity
+  [ ] Somewhat — the distances were visible but hard to interpret or felt inaccurate
+  [ ] No — the distances did not help me understand physician locations relative to me
+
+--------------------------------------------------------------------------------------
+Question 3
+--------------------------------------------------------------------------------------
+Based on the distance information shown, did you feel confident you could identify
+and choose a conveniently located physician?
+
+  [ ] Yes — the distance information was sufficient to make a confident choice
+  [ ] Somewhat — I could make a choice but would have liked more location detail
+  [ ] No — the distance information was insufficient to choose a convenient option
+
+======================================================================================
+Additional Comments (optional)
+======================================================================================
+
+________________________________________________________________
+________________________________________________________________
+________________________________________________________________
