@@ -1,0 +1,8 @@
+Metric 1: Distance Coverage Rate; Percent of viewed physician cards that display a distance value.
+I chose this because coverage is the prerequisite reliability check for this story: if distance is missing, users cannot make proximity-based decisions at all. This metric quickly reveals data, permission, or rendering failures. It is operationally actionable because gaps can be traced by environment, browser, or geolocation state.
+
+Metric 2: Distance Interpretation Rate; Percent of sessions where users say distances are clear and useful for comparing options.
+A visible number is useless if users cannot interpret what it means for convenience. This metric captures whether the format, precision, and context make distance decision-ready. It helps distinguish UX comprehension problems from data availability problems.
+
+Metric 3: Convenience-Driven Choice Confidence; Percent of sessions where users feel confident choosing a conveniently located physician.
+This is important because the real user outcome is confidence in choosing a practical option, not merely seeing mileage labels. This metric ties feature output to decision quality, which is what stakeholders ultimately care about. It is a strong signal that distance data is translating into real user value.
