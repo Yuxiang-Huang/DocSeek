@@ -100,6 +100,13 @@ describe("querySearchDoctors", () => {
 		).resolves.toEqual([]);
 	});
 
+	test("works with an empty filters object (no known filters set)", async () => {
+		// Passing an explicitly empty object should behave the same as omitting filters
+		await expect(
+			querySearchDoctors(mockSql as unknown as Bun.SQL, "[0.1]", 5, {}),
+		).resolves.toEqual([]);
+	});
+
 	test("rejects when the sql call rejects", async () => {
 		mockSql.mockImplementation(() => Promise.reject(new Error("DB connection failed")));
 		await expect(
