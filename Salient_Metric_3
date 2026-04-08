@@ -1,0 +1,11 @@
+Metric 1: 
+Pre-Recommendation Clarification Precision; Percent of vague-input sessions where clarification appears before any recommendation.
+This measures whether the guardrail triggers at the correct moment, which is essential for patient trust and recommendation integrity. Showing recommendations too early weakens credibility and can produce unsafe or misleading confidence. Precision here is a direct quality control signal for the clarification policy.
+
+Metric 2: 
+Clarification Resolution Rate; Percent of clarification sessions that successfully proceed after the next user response.
+A clarification prompt is only useful if it helps users recover and continue with minimal delay. High resolution means the prompt is understandable, specific, and practically useful. Low resolution indicates the message is too generic and causes looped frustration.
+
+Metric 3: 
+Over-Blocking Rate; Percent of clearly detailed submissions incorrectly blocked for more clarification.
+This metric is necessary because it prevents the system from becoming overly strict. Even a "safe" validator fails if it blocks valid inputs and makes users feel unheard. Tracking over-blocking keeps the experience fair, efficient, and aligned with user intent.
