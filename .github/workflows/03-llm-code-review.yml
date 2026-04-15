@@ -8,7 +8,7 @@
 # Available on: ALL GitHub Copilot plans (same as workflow 02).
 #
 # Required secrets:
-#   COPILOT_TOKEN — same PAT used by all other workflows
+#   PERSONAL_ACCESS_TOKEN — same PAT used by all other workflows
 #     (Account: Copilot Requests r/w  |  Repo: Contents r, Pull requests r/w, Metadata r)
 #
 # The built-in GITHUB_TOKEN is sufficient for posting the PR comment.
@@ -59,7 +59,7 @@ jobs:
       # ── 4. Run Copilot CLI to produce a review ────────────────────────────
       - name: Generate review with Copilot CLI
         env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN || github.token }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}

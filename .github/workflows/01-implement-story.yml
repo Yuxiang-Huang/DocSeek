@@ -10,7 +10,7 @@
 # Available on: GitHub Copilot Pro, Pro+, Business, and Enterprise.
 #
 # Required secrets:
-#   COPILOT_TOKEN — fine-grained PAT with:
+#   PERSONAL_ACCESS_TOKEN — fine-grained PAT with:
 #     - Account permission : Copilot Requests (read/write)
 #     - Repo permissions   : Contents (r/w), Issues (r/w), Pull requests (r/w),
 #                            Metadata (read)
@@ -40,7 +40,7 @@ jobs:
       - name: Get Copilot bot ID
         id: bot
         env:
-          GH_TOKEN: ${{ secrets.COPILOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
@@ -75,7 +75,7 @@ jobs:
       - name: Get issue node ID
         id: issue
         env:
-          GH_TOKEN: ${{ secrets.COPILOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
           ISSUE_NUM: ${{ github.event.issue.number }}
@@ -98,7 +98,7 @@ jobs:
       # ── 3. Assign Copilot to the issue with custom instructions ───────────
       - name: Assign Copilot cloud agent
         env:
-          GH_TOKEN: ${{ secrets.COPILOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           BOT_ID: ${{ steps.bot.outputs.bot_id }}
           ISSUE_NODE_ID: ${{ steps.issue.outputs.issue_node_id }}
           ISSUE_NUM: ${{ github.event.issue.number }}
