@@ -59,7 +59,7 @@ jobs:
       # ── 4. Run Copilot CLI to produce a review ────────────────────────────
       - name: Generate review with Copilot CLI
         env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN || github.token }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}

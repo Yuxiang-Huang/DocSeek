@@ -119,7 +119,7 @@ jobs:
       # ── 6. Run Copilot CLI to write the dev spec ──────────────────────────
       - name: Generate dev spec with Copilot CLI
         env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN || github.token }}
           STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
           SPEC_FILE: ${{ steps.extract.outputs.spec_file }}
           PR_TITLE: ${{ github.event.pull_request.title }}

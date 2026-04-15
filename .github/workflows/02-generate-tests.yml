@@ -123,7 +123,7 @@ jobs:
       #       --no-ask-user              non-interactive mode for CI
       - name: Run Copilot CLI to write tests
         env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN || github.token }}
           STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
           TEST_ISSUE: ${{ steps.tracking.outputs.test_issue }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
