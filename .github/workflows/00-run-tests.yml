@@ -1,0 +1,68 @@
+# Section 4 (CI requirement) — Run Tests in GitHub Actions
+#
+# Trigger: any push to main, or any PR targeting main.
+# Action:  Runs both test suites in parallel:
+#            - Vitest  (client/  → npm test)
+#            - Bun test (api/    → bun test)
+#
+# This satisfies the assignment requirement that tests run in GitHub Actions
+# on relevant events and that CI results are publicly visible.
+#
+# No secrets required — all tests are self-contained (external deps are mocked).
+
+name: "S4 · Run Tests (CI)"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Frontend — Vitest ──────────────────────────────────────────────────────
+  client-tests:
+    name: "Client — Vitest"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Vitest
+        run: npm test
+
+  # ── Backend — Bun test ────────────────────────────────────────────────────
+  api-tests:
+    name: "API — Bun test"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run Bun tests
+        run: bun test

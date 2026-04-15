@@ -1,0 +1,51 @@
+# Companion to 01-implement-story.yml
+#
+# Copilot coding agent opens PRs under the bot account "github-copilot[bot]".
+# Rather than relying on prompt instructions to self-label, this workflow
+# automatically adds the correct label the moment a Copilot PR is opened,
+# guaranteeing that workflows 02 and 04 fire correctly.
+#
+# Logic:
+#   - PR opened by "github-copilot[bot]" with a branch starting "feat/"
+#     → add label "copilot-implementation"
+#   - PR opened by "github-copilot[bot]" with a branch starting "test/"
+#     → add label "copilot-tests"
+#
+# No extra secrets needed — GITHUB_TOKEN can label PRs on the same repo.
+
+name: "S3/S4 · Auto-label Copilot PRs"
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  label:
+    # Only act on PRs opened by the Copilot coding agent bot
+    if: github.event.pull_request.user.login == 'github-copilot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add implementation label
+        if: startsWith(github.event.pull_request.head.ref, 'feat/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr edit "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --add-label "copilot-implementation"
+          echo "Labeled PR #${{ github.event.pull_request.number }} as copilot-implementation"
+
+      - name: Add tests label
+        if: startsWith(github.event.pull_request.head.ref, 'test/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr edit "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --add-label "copilot-tests"
+          echo "Labeled PR #${{ github.event.pull_request.number }} as copilot-tests"
