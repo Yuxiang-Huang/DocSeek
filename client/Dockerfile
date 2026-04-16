@@ -14,8 +14,6 @@ RUN bun install --frozen-lockfile
 
 # Environment variables
 ARG VITE_SERVER_URL
-ARG VITE_PUBLIC_POSTHOG_HOST
-ARG VITE_PUBLIC_POSTHOG_KEY
 
 # Build the project
 RUN bun run build --filter=@scottystack/web...
@@ -38,7 +36,7 @@ COPY Caddyfile ./Caddyfile
 RUN caddy fmt Caddyfile --overwrite
 
 # Copy files to the container image.
-COPY --from=builder /app/client/dist ./dist
+COPY --from=builder /dist ./dist
 
 # Use Caddy to run/serve the app
 CMD ["caddy", "run", "--config", "Caddyfile", "--adapter", "caddyfile"]
