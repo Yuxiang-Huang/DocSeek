@@ -1,5 +1,5 @@
-# Static frontend only (TanStack Start SPA). Serves `dist/client` with Caddy — no Node/Bun runtime,
-# no SSR, and no DocSeek API (that stays a separate service). Build enables `spa` in vite.config.ts.
+# Static Vite + TanStack Router SPA. Serves `dist/` (index.html + assets) with Caddy — no Node/Bun
+# at runtime and no DocSeek API in this image (that stays a separate service).
 #
 # Build context: `client/`
 #   docker build -f client/Dockerfile client \
@@ -26,9 +26,13 @@ WORKDIR /app
 COPY Caddyfile /etc/caddy/Caddyfile
 RUN caddy fmt --overwrite /etc/caddy/Caddyfile
 
-# Same layout as local `dist/client/` (_shell.html, assets/, …)
-COPY --from=builder /app/dist/client ./dist
+COPY --from=builder /app/dist ./dist
 
+ENV PORT=3000
 EXPOSE 3000
+
+# /health is handled in Caddyfile. Use printenv so the check follows runtime PORT (e.g. Railway).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+	CMD ["/bin/sh", "-c", "hp=$(printenv PORT); [ -n \"$hp\" ] || hp=3000; wget -q -O /dev/null \"http://127.0.0.1:${hp}/health\" || exit 1"]
 
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

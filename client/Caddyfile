@@ -1,4 +1,3 @@
-# Reference: https://docs.railway.com/guides/react#use-a-dockerfile
 {
 	admin off
 	persist_config off
@@ -16,7 +15,7 @@
 		format json
 	}
 
-	# Static files live here (Dockerfile copies dist/client → ./dist)
+	# Vite build: index.html + assets/
 	root * dist
 
 	encode gzip
@@ -25,10 +24,9 @@
 		respond "ok" 200
 	}
 
-	# try_files must run before file_server so missing paths (e.g. /, /results) rewrite to the SPA shell
 	handle {
 		route {
-			try_files {path} /_shell.html
+			try_files {path} /index.html
 			file_server
 		}
 	}
