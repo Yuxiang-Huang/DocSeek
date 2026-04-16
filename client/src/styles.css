@@ -958,6 +958,56 @@ a {
 	margin-top: 2rem;
 }
 
+.copy-link-wrap {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.copy-link-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	min-height: 3.5rem;
+	padding: 0.95rem 1.35rem;
+	border-radius: 999px;
+	border: 1px solid rgba(69, 108, 191, 0.3);
+	background: rgba(25, 39, 81, 0.76);
+	color: var(--text);
+	font-size: 1rem;
+	cursor: pointer;
+	transition:
+		transform 180ms ease,
+		border-color 180ms ease,
+		background 180ms ease;
+}
+
+.copy-link-button:hover,
+.copy-link-button:focus-visible {
+	transform: translateY(-1px);
+	border-color: rgba(80, 165, 255, 0.5);
+	background: rgba(31, 49, 100, 0.92);
+}
+
+.copy-link-status {
+	font-size: 0.9rem;
+}
+
+.copy-link-status-success {
+	color: #8fffd3;
+}
+
+.copy-link-status-error {
+	color: var(--danger);
+}
+
+.copy-link-url {
+	word-break: break-all;
+	color: var(--text-soft);
+	font-size: 0.85rem;
+}
+
 .doctor-links a,
 .secondary-action {
 	display: inline-flex;

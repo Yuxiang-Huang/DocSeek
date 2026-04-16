@@ -3,6 +3,7 @@ import { ArrowLeft, BookmarkCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	type Doctor,
+	CopyLinkButton,
 	direct_to_booking,
 	SearchPageShell,
 } from "../components/App";
@@ -154,6 +155,10 @@ export function SavedDoctorCard({
 						Book appointment
 					</a>
 				) : null}
+				<CopyLinkButton
+					doctorId={activeDoctor.id}
+					doctorName={activeDoctor.full_name}
+				/>
 				<button
 					className="secondary-action"
 					type="button"

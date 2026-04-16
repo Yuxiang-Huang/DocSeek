@@ -5,6 +5,24 @@ export type QuerySearchDoctorFilters = {
 	onlyAcceptingNewPatients?: boolean | null;
 };
 
+export function queryGetDoctorById(
+	sql: Bun.SQL,
+	id: number,
+): Promise<DoctorRow[]> {
+	return sql<DoctorRow[]>`
+		SELECT d.*,
+			NULL::double precision AS match_score,
+			NULL::text AS matched_specialty,
+			loc.latitude,
+			loc.longitude
+		FROM doctors d
+		LEFT JOIN doctor_locations dl ON dl.doctor_id = d.id AND dl.is_primary = true
+		LEFT JOIN locations loc ON loc.id = dl.location_id
+		WHERE d.id = ${id}
+		LIMIT 1
+	`;
+}
+
 export function querySearchDoctors(
 	sql: Bun.SQL,
 	vectorLiteral: string,

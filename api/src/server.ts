@@ -1,6 +1,6 @@
 import { createApp } from "./index";
 import { getRuntimeConfig } from "./env";
-import { createDoctorSearchService } from "./search";
+import { createDoctorSearchService, createDoctorLookupService } from "./search";
 import { createFeedbackService } from "./feedback";
 import { createSymptomValidationService } from "./validation";
 
@@ -8,6 +8,7 @@ const config = getRuntimeConfig();
 const app = createApp({
 	port: config.port,
 	searchService: createDoctorSearchService(config),
+	doctorLookupService: createDoctorLookupService(config),
 	feedbackService: createFeedbackService(config),
 	symptomValidationService: createSymptomValidationService(config),
 	corsAllowedOrigins: config.corsAllowedOrigins,

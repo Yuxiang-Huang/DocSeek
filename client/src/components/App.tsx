@@ -5,9 +5,12 @@ import {
 	ArrowRight,
 	Bookmark,
 	BookmarkCheck,
+	Check,
+	Copy,
 	Filter,
 	Search,
 	Stethoscope,
+	X,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { useSavedPhysicians } from "../hooks/useSavedPhysicians";
@@ -533,6 +536,65 @@ export function SearchPageShell({
 	);
 }
 
+export function getPhysicianProfileUrl(doctorId: number): string {
+	return `${window.location.origin}/physician/${doctorId}`;
+}
+
+type CopyLinkButtonProps = {
+	doctorId: number;
+	doctorName: string;
+};
+
+export function CopyLinkButton({ doctorId, doctorName }: CopyLinkButtonProps) {
+	const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+
+	async function handleCopy() {
+		const url = getPhysicianProfileUrl(doctorId);
+		try {
+			await navigator.clipboard.writeText(url);
+			setStatus("success");
+			setTimeout(() => setStatus("idle"), 3000);
+		} catch {
+			setStatus("error");
+			setTimeout(() => setStatus("idle"), 5000);
+		}
+	}
+
+	return (
+		<div className="copy-link-wrap">
+			<button
+				type="button"
+				className="copy-link-button"
+				onClick={handleCopy}
+				aria-label={`Copy link to ${doctorName}'s profile`}
+			>
+				{status === "success" ? (
+					<Check aria-hidden size={16} strokeWidth={2.5} />
+				) : status === "error" ? (
+					<X aria-hidden size={16} strokeWidth={2.5} />
+				) : (
+					<Copy aria-hidden size={16} strokeWidth={2} />
+				)}
+				Copy link
+			</button>
+			{status === "success" ? (
+				<span className="copy-link-status copy-link-status-success" role="status">
+					Link copied
+				</span>
+			) : null}
+			{status === "error" ? (
+				<span className="copy-link-status copy-link-status-error" role="alert">
+					Could not copy. Copy this link manually:{" "}
+					<span className="copy-link-url">
+						{getPhysicianProfileUrl(doctorId)}
+					</span>
+				</span>
+			) : null}
+		</div>
+	);
+}
+
+
 export function SearchForm({
 	symptoms,
 	onSymptomsChange,
@@ -990,6 +1052,10 @@ export function DoctorRecommendationCard({
 						Book appointment
 					</a>
 				) : null}
+				<CopyLinkButton
+					doctorId={activeDoctor.id}
+					doctorName={activeDoctor.full_name}
+				/>
 				<button
 					className="secondary-action"
 					type="button"
