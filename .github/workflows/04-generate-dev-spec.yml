@@ -1,0 +1,250 @@
+# Section 6 — Automated Development Specification
+#
+# Trigger: a PR labeled "copilot-tests" is merged to main.
+#
+# Mechanism: installs GitHub Copilot CLI on the runner, passes the user story
+# and implementation diff as context, and asks Copilot to write or update the
+# dev spec file directly using --allow-tool=write.
+# The workflow then commits the file and opens a PR.
+#
+# Available on: ALL GitHub Copilot plans.
+#
+# Required secrets:
+#   PERSONAL_ACCESS_TOKEN — same PAT used by all other workflows
+
+name: "S6 · Generate Dev Spec (Copilot CLI)"
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+jobs:
+  generate-spec:
+    if: >
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'copilot-tests')
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout with push-capable token ──────────────────────────────
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      # ── 2. Extract story issue number from the tests PR body ──────────────
+      - name: Extract story issue number
+        id: extract
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          STORY_ISSUE=$(echo "$PR_BODY" \
+            | grep -oP '(?i)related to\s+#\K[0-9]+' | head -1)
+          if [ -z "$STORY_ISSUE" ]; then
+            STORY_ISSUE=$(echo "$PR_BODY" \
+              | grep -oP '(?i)closes\s+#\K[0-9]+' | head -1)
+          fi
+          if [ -z "$STORY_ISSUE" ]; then
+            STORY_ISSUE="${PR_NUMBER}"
+          fi
+          SPEC_FILE="docs/user-story-${STORY_ISSUE}-dev-spec.md"
+          echo "story_issue=${STORY_ISSUE}" >> "$GITHUB_OUTPUT"
+          echo "spec_file=${SPEC_FILE}"     >> "$GITHUB_OUTPUT"
+          echo "story_issue=${STORY_ISSUE}  spec_file=${SPEC_FILE}"
+
+      # ── 3. Create tracking GitHub Issue (hygiene requirement) ─────────────
+      - name: Create spec-tracking issue
+        id: tracking
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          REPO: ${{ github.repository }}
+          STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SPEC_FILE: ${{ steps.extract.outputs.spec_file }}
+        run: |
+          ISSUE_URL=$(gh issue create \
+            --repo  "${REPO}" \
+            --title "Dev spec: User Story #${STORY_ISSUE}" \
+            --body  "## Automated development specification
+
+          Tracks generation of the dev spec for user story #${STORY_ISSUE}.
+
+          **Triggered by:** Tests PR #${PR_NUMBER} merging to main.
+          **Spec file:** \`${SPEC_FILE}\`
+
+          Opened automatically by \`.github/workflows/04-generate-dev-spec.yml\`.
+
+          ### Definition of Done
+          - [ ] Spec written to \`${SPEC_FILE}\`
+          - [ ] PR reviewed by a human
+          - [ ] PR merged to main")
+
+          SPEC_ISSUE=$(echo "${ISSUE_URL}" | grep -oP '[0-9]+$')
+          echo "spec_issue=${SPEC_ISSUE}" >> "$GITHUB_OUTPUT"
+          echo "Created spec-tracking issue #${SPEC_ISSUE}"
+
+      # ── 4. Gather context: story issue body + implementation diff ─────────
+      - name: Gather context
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          REPO: ${{ github.repository }}
+          STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh issue view "${STORY_ISSUE}" \
+            --repo "${REPO}" --json body -q '.body' \
+            | head -c 4000 > /tmp/story-body.txt
+          echo "Story body: $(wc -c < /tmp/story-body.txt) chars"
+
+          gh pr diff "${PR_NUMBER}" \
+            --repo "${REPO}" \
+            | head -c 10000 > /tmp/impl.diff
+          echo "Diff: $(wc -c < /tmp/impl.diff) chars"
+
+      # ── 5. Set up Node.js and install Copilot CLI ─────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install GitHub Copilot CLI
+        run: npm install -g @github/copilot
+
+      # ── 6. Run Copilot CLI to write the dev spec ──────────────────────────
+      - name: Generate dev spec with Copilot CLI
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
+          STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
+          SPEC_FILE: ${{ steps.extract.outputs.spec_file }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          SPEC_EXISTS="false"
+          [ -s "${SPEC_FILE}" ] && SPEC_EXISTS="true"
+          echo "spec_exists=${SPEC_EXISTS}"
+
+          cat > /tmp/spec-prompt.txt << 'PROMPT_EOF'
+          You are writing a development specification for DocSeek, a UPMC physician-matching web application.
+
+          DocSeek stack:
+          - Frontend: React 19 + Vite + TypeScript (client/src/), TanStack Router, TanStack Query, Tailwind CSS v4
+          - Backend: Bun + Hono REST API (api/src/)
+          - Database: PostgreSQL + pgvector for physician vector similarity search
+          - AI: OpenAI text-embedding-3-small (embeddings), GPT-4o (re-ranking, symptom validation)
+          - Frontend tests: Vitest in client/src/tests/
+          - Backend tests: Bun test in api/src/*.test.ts
+
+          Existing dev specs in docs/ show the exact format to follow (e.g. docs/user-story-1-dev-spec.md).
+          PROMPT_EOF
+
+          if [ "$SPEC_EXISTS" = "true" ]; then
+            # Include the existing spec directly so Copilot doesn't need to read it
+            {
+              echo ""
+              echo "An existing spec already exists at ${SPEC_FILE}. UPDATE it to reflect the new changes."
+              echo "Preserve all sections that are still accurate. Update:"
+              echo "- The Merge date section with today's date"
+              echo "- Architecture and flow diagrams if data flow changed"
+              echo "- Implementation reference tables for new/changed types and functions"
+              echo "- Technologies table if new packages were added"
+              echo "- Database schema if tables changed"
+              echo "- Failure modes if new ones apply"
+              echo ""
+              echo "Existing spec content (update this and write the result to ${SPEC_FILE}):"
+              echo '```markdown'
+              head -c 6000 "${SPEC_FILE}"
+              echo '```'
+            } >> /tmp/spec-prompt.txt
+          else
+            echo "
+          Write a NEW development specification file at ${SPEC_FILE}.
+
+          The specification MUST include all these sections in order:
+          1. Title: # User Story STORY_ISSUE_NUM — Development Specification
+          2. User story (As a... I want... so that...)
+          3. Related issue (GitHub link)
+          4. Story ownership table (Primary/Secondary owner with GitHub usernames — use TBD if unknown)
+          5. Merge date on main (today's date + one-sentence summary)
+          6. Architecture diagram (Mermaid flowchart TB: Browser / API / Database / OpenAI subgraphs)
+          7. Information flow diagram (Mermaid flowchart LR + Data elements table)
+          8. Class diagram (Mermaid classDiagram — all new types, interfaces, components)
+          9. Implementation reference (public/private tables per module, same format as user-story-1-dev-spec.md)
+          10. Technologies table (NEW dependencies only: Technology | Version | Purpose | Why chosen | Docs)
+          11. Database schema (new/modified tables, or 'No schema changes in this story.')
+          12. Failure-mode effects (user-visible and internally visible per failure mode)
+          13. PII section (new user data collected? If not, state that explicitly)
+          14. Summary paragraph
+
+          Use the identical markdown table format and heading structure as docs/user-story-1-dev-spec.md.
+          Write the file to ${SPEC_FILE} now.
+          " >> /tmp/spec-prompt.txt
+            # Replace placeholder with actual issue number
+            sed -i "s/STORY_ISSUE_NUM/${STORY_ISSUE}/g" /tmp/spec-prompt.txt
+          fi
+
+          # Append context
+          echo "
+          User story #${STORY_ISSUE} issue body:
+          $(cat /tmp/story-body.txt)
+
+          Implementation diff (PR: ${PR_TITLE}):
+          $(cat /tmp/impl.diff)
+          " >> /tmp/spec-prompt.txt
+
+          copilot -p "$(cat /tmp/spec-prompt.txt)" \
+            --allow-tool=write \
+            --allow-tool='shell(git:*)' \
+            --no-ask-user
+
+      # ── 7. Commit the spec and open a PR ─────────────────────────────────
+      - name: Commit and open PR
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          REPO: ${{ github.repository }}
+          STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
+          SPEC_FILE: ${{ steps.extract.outputs.spec_file }}
+          SPEC_ISSUE: ${{ steps.tracking.outputs.spec_issue }}
+          TESTS_PR: ${{ github.event.pull_request.number }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ ! -s "${SPEC_FILE}" ]; then
+            echo "ERROR: Copilot did not write ${SPEC_FILE}. Check step 6 logs."
+            exit 1
+          fi
+
+          # Determine new vs update for commit message
+          if git ls-files --error-unmatch "${SPEC_FILE}" 2>/dev/null; then
+            ACTION="update"
+          else
+            ACTION="add"
+          fi
+
+          BRANCH="docs/story-${STORY_ISSUE}-dev-spec"
+          git checkout -b "${BRANCH}"
+          git add "${SPEC_FILE}"
+          git commit -m "docs: ${ACTION} dev spec for story #${STORY_ISSUE} (ref #${SPEC_ISSUE})"
+          git push origin "${BRANCH}"
+
+          gh pr create \
+            --repo  "${REPO}" \
+            --base  "main" \
+            --head  "${BRANCH}" \
+            --title "docs: ${ACTION} dev spec for story #${STORY_ISSUE} (closes #${SPEC_ISSUE})" \
+            --body  "## Development Specification — User Story #${STORY_ISSUE}
+
+          Closes #${SPEC_ISSUE}
+          Related to #${STORY_ISSUE}
+          Triggered by tests PR #${TESTS_PR} merging to main.
+
+          This PR adds/updates \`${SPEC_FILE}\`.
+
+          Generated by \`.github/workflows/04-generate-dev-spec.yml\` using GitHub Copilot CLI.
+
+          > Please verify the spec accurately reflects the implementation before merging."

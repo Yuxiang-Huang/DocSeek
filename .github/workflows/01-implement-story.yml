@@ -1,0 +1,143 @@
+# Section 3 — Automated Code Generation
+#
+# Trigger: a team member applies the "user-story" label to a GitHub Issue.
+#
+# Mechanism (from docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/create-a-pr):
+#   Assigns the Copilot cloud agent to the issue via the GraphQL API with
+#   agentAssignment.customInstructions.  Copilot then works autonomously,
+#   creates a branch, implements the story, and opens a PR.
+#
+# Available on: GitHub Copilot Pro, Pro+, Business, and Enterprise.
+#
+# Required secrets:
+#   PERSONAL_ACCESS_TOKEN — fine-grained PAT with:
+#     - Account permission : Copilot Requests (read/write)
+#     - Repo permissions   : Contents (r/w), Issues (r/w), Pull requests (r/w),
+#                            Metadata (read)
+#
+# Required labels (create once in repo Settings → Labels):
+#   user-story             — applied by humans to trigger this workflow
+#   copilot-implementation — applied by workflow 01b when Copilot's PR opens
+
+name: "S3 · Assign Copilot Cloud Agent to Issue"
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  assign-copilot:
+    if: github.event.label.name == 'user-story'
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Look up the Copilot bot ID in this repo's suggestedActors ──────
+      #       (ID is stable per org but we fetch it dynamically to be safe)
+      - name: Get Copilot bot ID
+        id: bot
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          BOT_ID=$(gh api graphql \
+            -H "GraphQL-Features: issues_copilot_assignment_api_support" \
+            -f query='
+              query($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                  suggestedActors(capabilities: [CAN_BE_ASSIGNED], first: 100) {
+                    nodes {
+                      login
+                      ... on Bot { id }
+                    }
+                  }
+                }
+              }' \
+            -f owner="${OWNER}" \
+            -f repo="${REPO_NAME}" \
+            --jq '.data.repository.suggestedActors.nodes[]
+                  | select(.login == "copilot-swe-agent") | .id')
+
+          if [ -z "$BOT_ID" ]; then
+            echo "ERROR: copilot-swe-agent not found in suggestedActors."
+            echo "Check that Copilot cloud agent is enabled for this repository"
+            echo "in Settings → Copilot → Agents."
+            exit 1
+          fi
+          echo "bot_id=${BOT_ID}" >> "$GITHUB_OUTPUT"
+          echo "Found Copilot bot ID: ${BOT_ID}"
+
+      # ── 2. Get the GraphQL node ID of the issue ───────────────────────────
+      - name: Get issue node ID
+        id: issue
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+        run: |
+          ISSUE_NODE_ID=$(gh api graphql \
+            -f query='
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  issue(number: $number) { id }
+                }
+              }' \
+            -f owner="${OWNER}" \
+            -f repo="${REPO_NAME}" \
+            -F number="${ISSUE_NUM}" \
+            --jq '.data.repository.issue.id')
+
+          echo "issue_node_id=${ISSUE_NODE_ID}" >> "$GITHUB_OUTPUT"
+          echo "Issue node ID: ${ISSUE_NODE_ID}"
+
+      # ── 3. Assign Copilot to the issue with custom instructions ───────────
+      - name: Assign Copilot cloud agent
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          BOT_ID: ${{ steps.bot.outputs.bot_id }}
+          ISSUE_NODE_ID: ${{ steps.issue.outputs.issue_node_id }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Write instructions to a file to avoid YAML/shell escaping issues
+          cat > /tmp/instructions.txt << 'INSTR_EOF'
+          You are implementing a new user story for DocSeek, a UPMC physician-matching web application.
+          Stack: React 19 + Vite + TypeScript (client/src/), Bun + Hono REST API (api/src/), PostgreSQL + pgvector, OpenAI for embeddings and re-ranking, Tailwind CSS v4.
+          Rule 1: Implement ONLY what the issue acceptance criteria require, nothing extra.
+          Rule 2: Do NOT create or modify any test files (client/src/tests/*.tsx, api/src/*.test.ts).
+          Rule 3: Do NOT create or modify anything in docs/.
+          Rule 4: Study existing similar files first to match code conventions.
+          Rule 5: New API route - register in api/src/server.ts following existing patterns.
+          Rule 6: New page - add to client/src/router.tsx and create component in client/src/routes/.
+          Rule 7: Verify the client builds cleanly before opening the PR (cd client && npm run build).
+          PR hygiene: branch name feat/story-ISSUE_NUM-short-slug, PR title "feat: summary (closes #ISSUE_NUM)", PR body first line "Closes #ISSUE_NUM" then bullet list of files changed.
+          INSTR_EOF
+
+          # Substitute the actual issue number into the instructions
+          INSTRUCTIONS=$(sed "s/ISSUE_NUM/${ISSUE_NUM}/g" /tmp/instructions.txt | tr '\n' ' ')
+
+          gh api graphql \
+            -H "GraphQL-Features: issues_copilot_assignment_api_support,coding_agent_model_selection" \
+            -f query='
+              mutation($issueId: ID!, $botIds: [ID!]!, $instructions: String!) {
+                updateIssue(input: {
+                  id: $issueId,
+                  assigneeIds: $botIds,
+                  agentAssignment: {
+                    customInstructions: $instructions
+                  }
+                }) {
+                  issue { number }
+                }
+              }' \
+            -f issueId="${ISSUE_NODE_ID}" \
+            -f botIds="[\"${BOT_ID}\"]" \
+            -f instructions="${INSTRUCTIONS}"
+
+          echo "Copilot assigned to issue #${ISSUE_NUM}. It will open a PR when done."
+          echo "Workflow 01b will label that PR automatically when it opens."
