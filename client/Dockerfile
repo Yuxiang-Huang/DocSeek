@@ -1,38 +1,44 @@
+# Base image with Bun
+FROM oven/bun:latest AS base
+WORKDIR /app
+
+# Build stage
+FROM base AS builder
+WORKDIR /app
+
+# Copy everything
+COPY . .
+
+# Install deps from bun.lock
+RUN bun install --frozen-lockfile
+
+# Environment variables
+ARG VITE_SERVER_URL
+ARG VITE_PUBLIC_POSTHOG_HOST
+ARG VITE_PUBLIC_POSTHOG_KEY
+
+# Build the project
+RUN bun run build --filter=@scottystack/web...
+
+################################################################################
+# Aplication Stage
 # Reference: https://docs.railway.com/guides/react#use-a-dockerfile
-# global options
-{
-    admin off # there's no need for the admin api in railway's environment
-    persist_config off # storage isn't persistent anyway
-    auto_https off # railway handles https for us, this would cause issues if left enabled
-    # runtime logs
-    log {
-        format json # set runtime log format to json mode
-    }
-    # server options
-    servers {
-        trusted_proxies static private_ranges 100.0.0.0/8 # trust railway's proxy
-    }
-}
+################################################################################
 
-# site block, listens on the $PORT environment variable, automatically assigned by railway
-:{$PORT:3000} {
-    # access logs
-    log {
-        format json # set access log format to json mode
-    }
+# Use the Caddy image
+FROM caddy
 
-    # health check for railway
-    rewrite /health /*
+# Create and change to the app directory.
+WORKDIR /app
 
-    # serve from the 'dist' folder (Vite builds into the 'dist' folder)
-    root * dist
+# Copy Caddyfile to the container image.
+COPY apps/web/Caddyfile ./Caddyfile
 
-    # enable gzipping responses
-    encode gzip
+# Copy local code to the container image.
+RUN caddy fmt Caddyfile --overwrite
 
-    # serve files from 'dist'
-    file_server
+# Copy files to the container image.
+COPY --from=builder /app/apps/web/dist ./dist
 
-    # if path doesn't exist, redirect it to 'index.html' for client side routing
-    try_files {path} /index.html
-}
+# Use Caddy to run/serve the app
+CMD ["caddy", "run", "--config", "Caddyfile", "--adapter", "caddyfile"]
