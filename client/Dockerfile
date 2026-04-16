@@ -13,7 +13,7 @@ COPY . .
 RUN bun install --frozen-lockfile
 
 # Environment variables
-ARG VITE_SERVER_URL
+ARG VITE_API_BASE_URL
 
 # Build the project
 RUN bun run build --filter=@scottystack/web...
