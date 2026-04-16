@@ -1,42 +1,33 @@
-# Base image with Bun
-FROM oven/bun:latest AS base
+# Static frontend only (TanStack Start SPA). Serves `dist/client` with Caddy — no Node/Bun runtime,
+# no SSR, and no DocSeek API (that stays a separate service). Build enables `spa` in vite.config.ts.
+#
+# Build context: `client/`
+#   docker build -f client/Dockerfile client \
+#     --build-arg VITE_API_BASE_URL=https://your-api.example
+
+FROM oven/bun:1 AS builder
+
 WORKDIR /app
 
-# Build stage
-FROM base AS builder
-WORKDIR /app
-
-# Copy everything
-COPY . .
-
-# Install deps from bun.lock
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-# Environment variables
-ARG VITE_API_BASE_URL
+COPY . .
 
-# Build the project
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
 RUN bun run build
 
-################################################################################
-# Aplication Stage
-# Reference: https://docs.railway.com/guides/react#use-a-dockerfile
-################################################################################
+FROM caddy:2-alpine
 
-# Use the Caddy image
-FROM caddy
-
-# Create and change to the app directory.
 WORKDIR /app
 
-# Copy Caddyfile to the container image.
-COPY Caddyfile ./Caddyfile
+COPY Caddyfile /etc/caddy/Caddyfile
+RUN caddy fmt --overwrite /etc/caddy/Caddyfile
 
-# Copy local code to the container image.
-RUN caddy fmt Caddyfile --overwrite
+COPY --from=builder /app/dist/client ./dist
 
-# Copy files to the container image.
-COPY --from=builder /app/dist ./dist
+EXPOSE 3000
 
-# Use Caddy to run/serve the app
-CMD ["caddy", "run", "--config", "Caddyfile", "--adapter", "caddyfile"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
