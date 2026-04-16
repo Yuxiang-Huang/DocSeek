@@ -32,7 +32,7 @@ FROM caddy
 WORKDIR /app
 
 # Copy Caddyfile to the container image.
-COPY client/Caddyfile ./Caddyfile
+COPY Caddyfile ./Caddyfile
 
 # Copy local code to the container image.
 RUN caddy fmt Caddyfile --overwrite
