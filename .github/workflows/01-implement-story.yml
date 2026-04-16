@@ -136,7 +136,7 @@ jobs:
                 }
               }' \
             -f issueId="${ISSUE_NODE_ID}" \
-            -f botIds="[\"${BOT_ID}\"]" \
+            -F botIds[]="${BOT_ID}" \
             -f instructions="${INSTRUCTIONS}"
 
           echo "Copilot assigned to issue #${ISSUE_NUM}. It will open a PR when done."
