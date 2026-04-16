@@ -26,6 +26,7 @@ WORKDIR /app
 COPY Caddyfile /etc/caddy/Caddyfile
 RUN caddy fmt --overwrite /etc/caddy/Caddyfile
 
+# Same layout as local `dist/client/` (_shell.html, assets/, …)
 COPY --from=builder /app/dist/client ./dist
 
 EXPOSE 3000

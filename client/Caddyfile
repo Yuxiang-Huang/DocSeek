@@ -1,36 +1,35 @@
 # Reference: https://docs.railway.com/guides/react#use-a-dockerfile
-# global options
 {
-    admin off # there's no need for the admin api in railway's environment
-    persist_config off # storage isn't persistent anyway
-    auto_https off # railway handles https for us, this would cause issues if left enabled
-    # runtime logs
-    log {
-        format json # set runtime log format to json mode
-    }
-    # server options
-    servers {
-        trusted_proxies static private_ranges 100.0.0.0/8 # trust railway's proxy
-    }
+	admin off
+	persist_config off
+	auto_https off
+	log {
+		format json
+	}
+	servers {
+		trusted_proxies static private_ranges 100.0.0.0/8
+	}
 }
 
-# site block, listens on the $PORT environment variable, automatically assigned by railway
 :{$PORT:3000} {
-    # access logs
-    log {
-        format json # set access log format to json mode
-    }
+	log {
+		format json
+	}
 
-    # health check for railway
-    rewrite /health /*
+	# Static files live here (Dockerfile copies dist/client → ./dist)
+	root * dist
 
-    # TanStack Start SPA build: only `dist/client` is copied here (static shell + assets)
-    root * dist
+	encode gzip
 
-    encode gzip
+	handle /health {
+		respond "ok" 200
+	}
 
-    file_server
-
-    # SPA fallback to prerendered shell (see vite `spa: { enabled: true }`)
-    try_files {path} /_shell.html
+	# try_files must run before file_server so missing paths (e.g. /, /results) rewrite to the SPA shell
+	handle {
+		route {
+			try_files {path} /_shell.html
+			file_server
+		}
+	}
 }
