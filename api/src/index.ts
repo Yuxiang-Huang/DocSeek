@@ -1,16 +1,13 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { DoctorSearchService, GetDoctorService } from "./search";
+import type { DoctorSearchService } from "./search";
 import type { FeedbackService } from "./feedback";
 import { validateRating } from "./feedback";
 import type { SymptomValidationService } from "./validation";
 
-export type { GetDoctorService };
-
 type AppDependencies = {
 	port?: number;
 	searchService?: DoctorSearchService;
-	getDoctorService?: GetDoctorService;
 	feedbackService?: FeedbackService;
 	symptomValidationService?: SymptomValidationService;
 	corsAllowedOrigins?: string[];
@@ -19,7 +16,6 @@ type AppDependencies = {
 export function createApp({
 	port = Number(process.env.PORT ?? 3000),
 	searchService,
-	getDoctorService,
 	feedbackService,
 	symptomValidationService,
 	corsAllowedOrigins = [],
@@ -90,29 +86,6 @@ export function createApp({
 				},
 				status,
 			);
-		}
-	});
-
-	app.get("/doctors/:id", async (c) => {
-		const doctorId = Number(c.req.param("id"));
-		if (!Number.isInteger(doctorId) || doctorId < 1) {
-			return c.json({ error: "invalid doctor id" }, 400);
-		}
-
-		try {
-			if (!getDoctorService) {
-				throw new Error("get doctor service is not configured");
-			}
-
-			const doctor = await getDoctorService(doctorId);
-			if (!doctor) {
-				return c.json({ error: "doctor not found" }, 404);
-			}
-
-			return c.json({ doctor });
-		} catch (error) {
-			const message = error instanceof Error ? error.message : "failed to fetch doctor";
-			return c.json({ error: message }, 500);
 		}
 	});
 

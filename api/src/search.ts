@@ -1,5 +1,4 @@
-import { queryGetDoctorById, querySearchDoctors } from "./queries";
-
+import { querySearchDoctors } from "./queries";
 
 const DEFAULT_RESULT_LIMIT = 10;
 
@@ -20,7 +19,7 @@ export type DoctorRow = {
 	primary_location: string | null;
 	primary_phone: string | null;
 	created_at: string;
-	match_score: number | null;
+	match_score: number;
 	matched_specialty: string | null;
 	latitude: number | null;
 	longitude: number | null;
@@ -49,8 +48,6 @@ type SearchDoctorsParams = {
 };
 
 export type DoctorSearchService = (params: SearchDoctorsParams) => Promise<DoctorRow[]>;
-
-export type GetDoctorService = (doctorId: number) => Promise<DoctorRow | null>;
 
 type SearchRuntimeConfig = {
 	databaseUrl: string;
@@ -196,14 +193,5 @@ export function createDoctorSearchService(
 		const rows = await querySearchDoctors(sql, vectorLiteral, limit, filters);
 
 		return requestDoctorSortFromOpenAI(symptoms, rows, config);
-	};
-}
-
-export function createGetDoctorService(config: Pick<SearchRuntimeConfig, "databaseUrl">): GetDoctorService {
-	const sql = new Bun.SQL(config.databaseUrl);
-
-	return async (doctorId) => {
-		const rows = await queryGetDoctorById(sql, doctorId);
-		return rows[0] ?? null;
 	};
 }
