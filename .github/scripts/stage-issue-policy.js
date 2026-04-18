@@ -30,26 +30,6 @@ function readFileArg(name) {
 	return file && fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
 }
 
-function appendOutput(outputFile, values) {
-	if (!outputFile) {
-		return;
-	}
-
-	const lines = Object.entries(values).map(([key, value]) => `${key}=${value || ""}`);
-	fs.appendFileSync(outputFile, `${lines.join("\n")}\n`);
-}
-
-function marker(body, name) {
-	const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	const match = String(body || "").match(new RegExp(`<!--\\s*${escaped}:\\s*([^\\s]+)\\s*-->`));
-	return match ? match[1] : "";
-}
-
-function closingIssue(body) {
-	const match = String(body || "").match(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)\b/i);
-	return match ? match[1] : "";
-}
-
 function stageBody({
 	stage,
 	parentNumber,
@@ -131,19 +111,6 @@ function main() {
 		fs.writeFileSync(getArg("output-file"), body);
 		return;
 	}
-
-	if (command === "outputs") {
-		const body = readFileArg("body-file");
-		const stage = marker(body, "docseek-stage");
-		appendOutput(getArg("output-file") || process.env.GITHUB_OUTPUT, {
-			stage,
-			parent_story: marker(body, "docseek-parent-story"),
-			implementation_issue: marker(body, "docseek-implementation-issue"),
-			tests_issue: marker(body, "docseek-tests-issue"),
-			dev_spec_issue: marker(body, "docseek-dev-spec-issue"),
-			closes_issue: closingIssue(body),
-		});
-	}
 }
 
 if (require.main === module) {
@@ -151,7 +118,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-	closingIssue,
-	marker,
 	stageBody,
 };
