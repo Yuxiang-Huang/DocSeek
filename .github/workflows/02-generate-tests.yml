@@ -1,21 +1,12 @@
-# Section 4 — Automated Test Generation
+# Section 4 — Start Test Generation Stage
 #
-# Trigger: a PR labeled "copilot-implementation" is merged to main.
+# Trigger: a Copilot implementation PR is merged to main.
 #
-# Mechanism (from docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/automate-with-actions):
-#   Installs GitHub Copilot CLI on the runner, then calls:
-#     copilot -p "PROMPT" --allow-tool=write --allow-tool='shell(git:*)' --no-ask-user
-#   Copilot reads the merged PR diff for context, writes Vitest and Bun test files
-#   to disk, and creates a branch + commit.  The workflow then opens the PR.
-#
-# Available on: ALL GitHub Copilot plans (Pro, Pro+, Business, Enterprise).
-#
-# Required secrets:
-#   PERSONAL_ACCESS_TOKEN — fine-grained PAT with:
-#     - Account permission : Copilot Requests (read/write)   ← required by Copilot CLI
-#     - Repo permissions   : Contents (r/w), Issues (r/w), Pull requests (r/w), Metadata (read)
+# This workflow does not generate tests directly. It assigns Copilot to the
+# pre-created tests sub-issue for the original user story. The tests sub-issue
+# contains the original user story content copied from the parent issue.
 
-name: "S4 · Generate Tests via Copilot CLI"
+name: "S4 · Assign Copilot to Tests Issue"
 
 on:
   pull_request:
@@ -24,180 +15,105 @@ on:
 
 permissions:
   issues: write
-  pull-requests: write
-  contents: write
+  pull-requests: read
+  contents: read
 
 jobs:
-  generate-tests:
+  assign-tests:
     if: >
       github.event.pull_request.merged == true &&
-      contains(github.event.pull_request.labels.*.name, 'copilot-implementation')
+      github.event.pull_request.user.login == 'github-copilot[bot]'
     runs-on: ubuntu-latest
 
     steps:
-      # ── 1. Checkout with a token that can push new branches ───────────────
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
-      # ── 2. Extract the original user-story issue number from the PR body ──
-      - name: Extract story issue number
-        id: extract
+      - name: Resolve implementation stage issue
+        id: implementation
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          STORY_ISSUE=$(echo "$PR_BODY" | grep -oP '(?i)closes\s+#\K[0-9]+' | head -1)
-          if [ -z "$STORY_ISSUE" ]; then
-            echo "WARNING: no 'Closes #N' found in PR body; using PR number."
-            STORY_ISSUE="${PR_NUMBER}"
+          printf '%s' "${PR_BODY}" > "${RUNNER_TEMP}/pr-body.md"
+          node .github/scripts/stage-issue-policy.js outputs \
+            --body-file "${RUNNER_TEMP}/pr-body.md" \
+            --output-file "${RUNNER_TEMP}/pr-outputs"
+
+          IMPLEMENTATION_ISSUE=$(grep '^closes_issue=' "${RUNNER_TEMP}/pr-outputs" | cut -d= -f2-)
+          if [ -z "${IMPLEMENTATION_ISSUE}" ]; then
+            echo "advance=false" >> "${GITHUB_OUTPUT}"
+            echo "PR #${PR_NUMBER} does not close a stage issue; skipping."
+            exit 0
           fi
-          echo "story_issue=${STORY_ISSUE}" >> "$GITHUB_OUTPUT"
-          echo "story_issue=${STORY_ISSUE}"
 
-      # ── 3. Create a tracking GitHub Issue (Section 4 hygiene requirement) ─
-      - name: Create test-tracking issue
-        id: tracking
+          gh issue view "${IMPLEMENTATION_ISSUE}" \
+            --repo "${REPO}" \
+            --json body \
+            --jq '.body' > "${RUNNER_TEMP}/implementation-issue.md"
+
+          node .github/scripts/stage-issue-policy.js outputs \
+            --body-file "${RUNNER_TEMP}/implementation-issue.md" \
+            --output-file "${GITHUB_OUTPUT}"
+
+          STAGE=$(grep '^stage=' "${GITHUB_OUTPUT}" | tail -1 | cut -d= -f2-)
+          if [ "${STAGE}" != "implementation" ]; then
+            echo "advance=false" >> "${GITHUB_OUTPUT}"
+            echo "Closed issue #${IMPLEMENTATION_ISSUE} is stage '${STAGE}', not implementation; skipping."
+            exit 0
+          fi
+
+          echo "advance=true" >> "${GITHUB_OUTPUT}"
+          echo "implementation_issue=${IMPLEMENTATION_ISSUE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Gather implementation PR diff
+        if: steps.implementation.outputs.advance == 'true'
         env:
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           REPO: ${{ github.repository }}
-          STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          ISSUE_URL=$(gh issue create \
-            --repo  "${REPO}" \
-            --title "Tests: ${PR_TITLE}" \
-            --label "testing" \
-            --body  "## Automated test tracking
+          gh pr diff "${PR_NUMBER}" --repo "${REPO}" | head -c 10000 > "${RUNNER_TEMP}/implementation.diff"
+          echo "Diff size: $(wc -c < "${RUNNER_TEMP}/implementation.diff") bytes"
 
-          This issue tracks automated tests for PR #${PR_NUMBER} (story #${STORY_ISSUE}).
-
-          **Implementation PR:** #${PR_NUMBER}
-          **User story issue:** #${STORY_ISSUE}
-
-          Opened automatically by \`.github/workflows/02-generate-tests.yml\`.
-
-          ### Definition of Done
-          - [ ] Vitest tests added in \`client/src/tests/\`
-          - [ ] Bun tests added/updated in \`api/src/\`
-          - [ ] All tests pass in CI
-          - [ ] PR reviewed and merged")
-
-          TEST_ISSUE=$(echo "${ISSUE_URL}" | grep -oP '[0-9]+$')
-          echo "test_issue=${TEST_ISSUE}" >> "$GITHUB_OUTPUT"
-          echo "Created tracking issue #${TEST_ISSUE}"
-
-      # ── 4. Get the diff of the merged implementation PR ───────────────────
-      - name: Fetch implementation PR diff
+      - name: Assign Copilot to tests issue
+        if: steps.implementation.outputs.advance == 'true'
         env:
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
-        run: |
-          gh pr diff "${PR_NUMBER}" --repo "${REPO}" > /tmp/impl.diff
-          echo "Diff size: $(wc -c < /tmp/impl.diff) bytes"
-
-      # ── 5. Create the test branch ─────────────────────────────────────────
-      - name: Create test branch
-        env:
-          STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "test/story-${STORY_ISSUE}-tests"
-
-      # ── 6. Set up Node.js (required to install Copilot CLI) ───────────────
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      # ── 7. Install Copilot CLI ────────────────────────────────────────────
-      - name: Install GitHub Copilot CLI
-        run: npm install -g @github/copilot
-
-      # ── 8. Write test files with Copilot CLI ─────────────────────────────
-      #       --allow-tool=write         lets Copilot write files to disk
-      #       --allow-tool='shell(git:*)' lets Copilot read git history for context
-      #       --no-ask-user              non-interactive mode for CI
-      - name: Run Copilot CLI to write tests
-        env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
-          STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
-          TEST_ISSUE: ${{ steps.tracking.outputs.test_issue }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          REPO: ${{ github.repository }}
-        run: |
-          # Write prompt to file — avoids YAML/shell quote issues
-          cat > /tmp/test-prompt.txt << 'PROMPT_EOF'
-          You are writing automated tests for DocSeek, a UPMC physician-matching web app.
-
-          Tech stack and test conventions:
-          - Frontend tests: Vitest + @testing-library/react with jsdom environment.
-            Write test files in client/src/tests/ matching the pattern *.test.tsx or *.test.ts.
-            Run with: cd client && npm test
-            See existing test files in client/src/tests/ for style reference (use vi.mock, describe/test blocks, each test has a comment "// input: X -> expected: Y").
-          - Backend tests: Bun test.
-            Write test files as api/src/*.test.ts (alongside the source file being tested).
-            Run with: cd api && bun test
-            See existing api/src/*.test.ts files for style reference.
-
-          Your task:
-          Read the diff below and write tests that cover all acceptance criteria for the feature.
-
-          Rules:
-          1. Write tests for every new function, component, and API route in the diff.
-          2. Use vi.mock() for OpenAI calls, database connections, and fetch — never make real network calls.
-          3. Each individual test must have a comment: // input: <setup> -> expected: <assertion>
-          4. Do not modify any implementation files — only write test files.
-          5. Write the files to disk now. Do not explain what you will write — just write the files.
-
-          Diff of the implementation PR:
-          PROMPT_EOF
-
-          # Append the diff to the prompt
-          cat /tmp/impl.diff >> /tmp/test-prompt.txt
-
-          copilot -p "$(cat /tmp/test-prompt.txt)" \
-            --allow-tool=write \
-            --allow-tool='shell(git:*)' \
-            --no-ask-user
-
-      # ── 9. Commit whatever Copilot wrote and open a PR ───────────────────
-      - name: Commit and open PR
-        env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          REPO: ${{ github.repository }}
-          STORY_ISSUE: ${{ steps.extract.outputs.story_issue }}
-          TEST_ISSUE: ${{ steps.tracking.outputs.test_issue }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PARENT_ISSUE: ${{ steps.implementation.outputs.parent_story }}
+          IMPLEMENTATION_ISSUE: ${{ steps.implementation.outputs.implementation_issue }}
+          TESTS_ISSUE: ${{ steps.implementation.outputs.tests_issue }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          # Stage any new/modified test files
-          git add client/src/tests/ api/src/ 2>/dev/null || git add -A
-
-          # Only commit if there are staged changes
-          if git diff --cached --quiet; then
-            echo "WARNING: Copilot did not write any files. Check the step above for errors."
+          if [ -z "${TESTS_ISSUE}" ]; then
+            echo "ERROR: implementation issue #${IMPLEMENTATION_ISSUE} does not reference a tests stage issue."
             exit 1
           fi
 
-          git commit -m "test: add tests for story #${STORY_ISSUE} (ref #${TEST_ISSUE})"
-          git push origin "test/story-${STORY_ISSUE}-tests"
+          BRANCH_NAME="test/issue-${TESTS_ISSUE}-tests"
 
-          gh pr create \
-            --repo  "${REPO}" \
-            --base  "main" \
-            --head  "test/story-${STORY_ISSUE}-tests" \
-            --title "test: add tests for story #${STORY_ISSUE} (closes #${TEST_ISSUE})" \
-            --label "copilot-tests" \
-            --body  "## Tests for User Story #${STORY_ISSUE}
+          cat > "${RUNNER_TEMP}/tests-instructions.txt" << INSTRUCTIONS
+          You are writing automated tests for DocSeek in issue #${TESTS_ISSUE}.
+          That issue is a stage sub-issue and includes the full original user story content from parent issue #${PARENT_ISSUE}.
+          The implementation PR #${PR_NUMBER} has been merged.
 
-          Closes #${TEST_ISSUE}
-          Related to #${STORY_ISSUE}
-          Tests for implementation PR #${PR_NUMBER}.
+          Rules:
+          1. Write tests that cover the original user story acceptance criteria and the merged implementation.
+          2. Frontend tests go in client/src/tests/ and run with cd client && npm test.
+          3. Backend tests go in api/src/*.test.ts and run with cd api && bun test.
+          4. Mock OpenAI calls, database connections, and fetch; do not make real network calls.
+          5. Avoid modifying implementation files unless a test exposes a required fix.
+          6. Use branch ${BRANCH_NAME}.
+          7. Open the PR against main.
+          8. PR title format: test: add tests for story #${PARENT_ISSUE} (closes #${TESTS_ISSUE})
+          9. PR body first line: Closes #${TESTS_ISSUE}
+          10. Include Related to #${PARENT_ISSUE} and Tests implementation PR #${PR_NUMBER} lines.
 
-          Generated by \`.github/workflows/02-generate-tests.yml\` using GitHub Copilot CLI.
+          Implementation diff excerpt:
+          $(cat "${RUNNER_TEMP}/implementation.diff")
+          INSTRUCTIONS
 
-          > Please verify the tests are correct and that CI passes before merging."
+          bash .github/scripts/assign-copilot-agent.sh "${TESTS_ISSUE}" "${RUNNER_TEMP}/tests-instructions.txt"
