@@ -1,6 +1,6 @@
 # Section 3 — Stage Issue Orchestration
 #
-# Trigger: a team member applies the "copilot" label to a user-story issue.
+# Trigger: a team member applies the "user-story" label to a GitHub issue.
 #
 # This workflow creates three GitHub sub-issues for the story:
 #   - implementation: labeled "copilot-implementation"
@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   create-stage-issues:
-    if: github.event_name == 'issues' && github.event.label.name == 'copilot'
+    if: github.event_name == 'issues' && github.event.label.name == 'user-story'
     runs-on: ubuntu-latest
 
     steps:
