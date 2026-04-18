@@ -20,7 +20,7 @@ export type DoctorRow = {
 	primary_location: string | null;
 	primary_phone: string | null;
 	created_at: string;
-	match_score: number;
+	match_score: number | null;
 	matched_specialty: string | null;
 	latitude: number | null;
 	longitude: number | null;

@@ -11,7 +11,7 @@ export function queryGetDoctorById(
 ): Promise<DoctorRow[]> {
 	return sql<DoctorRow[]>`
 		SELECT d.*,
-			0::float AS match_score,
+			NULL::float AS match_score,
 			NULL::text AS matched_specialty,
 			loc.latitude,
 			loc.longitude
