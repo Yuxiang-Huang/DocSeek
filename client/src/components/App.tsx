@@ -12,6 +12,7 @@ import {
 	Stethoscope,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { useCopyPhysicianLink } from "../hooks/useCopyPhysicianLink";
 import { useSavedPhysicians } from "../hooks/useSavedPhysicians";
 import { calculateDistance, formatDistance } from "../utils/distance";
 import { AppNav } from "./AppNav";
@@ -893,24 +894,12 @@ export function DoctorRecommendationCard({
 }: DoctorRecommendationCardProps) {
 	const activeDoctor = doctors[activeDoctorIndex];
 	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
-	const [copyStatus, setCopyStatus] = useState<"idle" | "success" | "error">(
-		"idle",
+	const { copyStatus, handleCopyLink } = useCopyPhysicianLink(
+		activeDoctor?.id ?? 0,
 	);
 
 	if (!activeDoctor) {
 		return null;
-	}
-
-	async function handleCopyLink() {
-		const url = getPhysicianProfileUrl(activeDoctor.id);
-		try {
-			await navigator.clipboard.writeText(url);
-			setCopyStatus("success");
-			setTimeout(() => setCopyStatus("idle"), 2500);
-		} catch {
-			setCopyStatus("error");
-			setTimeout(() => setCopyStatus("idle"), 5000);
-		}
 	}
 
 	const preciseDistanceMiles =

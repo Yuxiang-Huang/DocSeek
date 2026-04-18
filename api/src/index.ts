@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { DoctorSearchService } from "./search";
+import type { DoctorSearchService, GetDoctorService } from "./search";
 import type { FeedbackService } from "./feedback";
 import { validateRating } from "./feedback";
 import type { SymptomValidationService } from "./validation";
 
-export type GetDoctorService = (doctorId: number) => Promise<import("./search").DoctorRow | null>;
+export type { GetDoctorService };
 
 type AppDependencies = {
 	port?: number;

@@ -7,6 +7,7 @@ import {
 	getPhysicianProfileUrl,
 	SearchPageShell,
 } from "../components/App";
+import { useCopyPhysicianLink } from "../hooks/useCopyPhysicianLink";
 import { useSavedPhysicians } from "../hooks/useSavedPhysicians";
 
 export const Route = createFileRoute("/saved")({
@@ -86,25 +87,13 @@ export function SavedDoctorCard({
 }: SavedDoctorCardProps) {
 	const activeDoctor = doctors[activeDoctorIndex];
 	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
-	const [copyStatus, setCopyStatus] = useState<"idle" | "success" | "error">(
-		"idle",
+	const { copyStatus, handleCopyLink } = useCopyPhysicianLink(
+		activeDoctor?.id ?? 0,
 	);
 
 	if (!activeDoctor) return null;
 
 	const bookingUrl = direct_to_booking(activeDoctor);
-
-	async function handleCopyLink() {
-		const url = getPhysicianProfileUrl(activeDoctor.id);
-		try {
-			await navigator.clipboard.writeText(url);
-			setCopyStatus("success");
-			setTimeout(() => setCopyStatus("idle"), 2500);
-		} catch {
-			setCopyStatus("error");
-			setTimeout(() => setCopyStatus("idle"), 5000);
-		}
-	}
 
 	return (
 		<section className="doctor-card" aria-live="polite">

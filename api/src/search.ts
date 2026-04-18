@@ -1,5 +1,6 @@
 import { queryGetDoctorById, querySearchDoctors } from "./queries";
 
+
 const DEFAULT_RESULT_LIMIT = 10;
 
 export type DoctorRow = {
@@ -48,6 +49,8 @@ type SearchDoctorsParams = {
 };
 
 export type DoctorSearchService = (params: SearchDoctorsParams) => Promise<DoctorRow[]>;
+
+export type GetDoctorService = (doctorId: number) => Promise<DoctorRow | null>;
 
 type SearchRuntimeConfig = {
 	databaseUrl: string;
@@ -196,7 +199,7 @@ export function createDoctorSearchService(
 	};
 }
 
-export function createGetDoctorService(config: Pick<SearchRuntimeConfig, "databaseUrl">): import("./index").GetDoctorService {
+export function createGetDoctorService(config: Pick<SearchRuntimeConfig, "databaseUrl">): GetDoctorService {
 	const sql = new Bun.SQL(config.databaseUrl);
 
 	return async (doctorId) => {
