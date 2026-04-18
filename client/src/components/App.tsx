@@ -5,7 +5,9 @@ import {
 	ArrowRight,
 	Bookmark,
 	BookmarkCheck,
+	Check,
 	Filter,
+	Link2,
 	Search,
 	Stethoscope,
 } from "lucide-react";
@@ -164,6 +166,36 @@ export function getDoctorSearchUrl(apiBaseUrl = API_BASE_URL) {
 
 export function getSymptomValidationUrl(apiBaseUrl = API_BASE_URL) {
 	return `${apiBaseUrl}/symptoms/validate`;
+}
+
+export function getPhysicianProfileUrl(
+	doctorId: number,
+	origin = typeof window !== "undefined" ? window.location.origin : "",
+) {
+	return `${origin}/physician/${doctorId}`;
+}
+
+export function getDoctorUrl(doctorId: number, apiBaseUrl = API_BASE_URL) {
+	return `${apiBaseUrl}/doctors/${doctorId}`;
+}
+
+export async function fetchDoctor(
+	doctorId: number,
+	{ apiBaseUrl = API_BASE_URL, fetchImpl = fetch }: SearchDoctorsOptions = {},
+): Promise<Doctor | null> {
+	const response = await fetchImpl(getDoctorUrl(doctorId, apiBaseUrl));
+
+	if (response.status === 404) {
+		return null;
+	}
+
+	if (!response.ok) {
+		const payload = (await response.json()) as { error?: string };
+		throw new Error(payload.error ?? "Unable to load physician profile.");
+	}
+
+	const payload = (await response.json()) as { doctor?: Doctor };
+	return payload.doctor ?? null;
 }
 
 export function normalizeSymptoms(symptoms: string) {
@@ -861,9 +893,24 @@ export function DoctorRecommendationCard({
 }: DoctorRecommendationCardProps) {
 	const activeDoctor = doctors[activeDoctorIndex];
 	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
+	const [copyStatus, setCopyStatus] = useState<"idle" | "success" | "error">(
+		"idle",
+	);
 
 	if (!activeDoctor) {
 		return null;
+	}
+
+	async function handleCopyLink() {
+		const url = getPhysicianProfileUrl(activeDoctor.id);
+		try {
+			await navigator.clipboard.writeText(url);
+			setCopyStatus("success");
+			setTimeout(() => setCopyStatus("idle"), 2500);
+		} catch {
+			setCopyStatus("error");
+			setTimeout(() => setCopyStatus("idle"), 5000);
+		}
 	}
 
 	const preciseDistanceMiles =
@@ -991,6 +1038,24 @@ export function DoctorRecommendationCard({
 					</a>
 				) : null}
 				<button
+					className={`secondary-action copy-link-button${copyStatus === "success" ? " copy-link-success" : ""}`}
+					type="button"
+					onClick={handleCopyLink}
+					aria-label={`Copy link to ${activeDoctor.full_name}'s profile`}
+				>
+					{copyStatus === "success" ? (
+						<>
+							<Check aria-hidden size={18} strokeWidth={2.2} />
+							Link copied!
+						</>
+					) : (
+						<>
+							<Link2 aria-hidden size={18} strokeWidth={2} />
+							Copy link
+						</>
+					)}
+				</button>
+				<button
 					className="secondary-action"
 					type="button"
 					onClick={onNextDoctor}
@@ -999,6 +1064,14 @@ export function DoctorRecommendationCard({
 					{getNextRecommendationLabel(hasNextDoctor)}
 				</button>
 			</div>
+			{copyStatus === "error" ? (
+				<p className="copy-link-error" role="alert">
+					Unable to copy automatically.{" "}
+					<a href={getPhysicianProfileUrl(activeDoctor.id)} rel="noreferrer">
+						Open profile to share link
+					</a>
+				</p>
+			) : null}
 		</section>
 	);
 }

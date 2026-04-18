@@ -1,4 +1,4 @@
-import { querySearchDoctors } from "./queries";
+import { queryGetDoctorById, querySearchDoctors } from "./queries";
 
 const DEFAULT_RESULT_LIMIT = 10;
 
@@ -193,5 +193,14 @@ export function createDoctorSearchService(
 		const rows = await querySearchDoctors(sql, vectorLiteral, limit, filters);
 
 		return requestDoctorSortFromOpenAI(symptoms, rows, config);
+	};
+}
+
+export function createGetDoctorService(config: Pick<SearchRuntimeConfig, "databaseUrl">): import("./index").GetDoctorService {
+	const sql = new Bun.SQL(config.databaseUrl);
+
+	return async (doctorId) => {
+		const rows = await queryGetDoctorById(sql, doctorId);
+		return rows[0] ?? null;
 	};
 }
