@@ -1,5 +1,5 @@
 import { describe, test, expect, mock, beforeEach } from "bun:test";
-import { querySearchDoctors } from "../queries";
+import { queryGetDoctorById, querySearchDoctors } from "../queries";
 import type { DoctorRow } from "../search";
 
 // querySearchDoctors receives `sql` as a parameter (tagged template literal tag),
@@ -111,6 +111,37 @@ describe("querySearchDoctors", () => {
 		mockSql.mockImplementation(() => Promise.reject(new Error("DB connection failed")));
 		await expect(
 			querySearchDoctors(mockSql as unknown as Bun.SQL, "[0.1]", 5),
+		).rejects.toThrow("DB connection failed");
+	});
+});
+
+// ===========================================================================
+// queryGetDoctorById
+// ===========================================================================
+
+describe("queryGetDoctorById", () => {
+	let mockSql: ReturnType<typeof mock>;
+
+	beforeEach(() => {
+		mockSql = mock(() => Promise.resolve([]));
+	});
+
+	test("returns what the sql template tag resolves to", async () => {
+		const doctor = makeDoctorRow(9);
+		mockSql.mockImplementation(() => Promise.resolve([doctor]));
+		const result = await queryGetDoctorById(mockSql as unknown as Bun.SQL, 9);
+		expect(result).toEqual([doctor]);
+	});
+
+	test("calls the sql template tag exactly once", async () => {
+		await queryGetDoctorById(mockSql as unknown as Bun.SQL, 2);
+		expect(mockSql).toHaveBeenCalledTimes(1);
+	});
+
+	test("rejects when the sql call rejects", async () => {
+		mockSql.mockImplementation(() => Promise.reject(new Error("DB connection failed")));
+		await expect(
+			queryGetDoctorById(mockSql as unknown as Bun.SQL, 5),
 		).rejects.toThrow("DB connection failed");
 	});
 });

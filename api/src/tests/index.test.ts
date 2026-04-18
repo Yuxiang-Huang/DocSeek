@@ -6,6 +6,7 @@ import { createApp } from "../index";
 // ===========================================================================
 
 const mockSearchService = mock(() => Promise.resolve([]));
+const mockGetDoctorService = mock(() => Promise.resolve(null));
 const mockFeedbackService = mock(() => Promise.resolve());
 const mockSymptomValidationService = mock(() =>
 	Promise.resolve({ isDescriptiveEnough: true }),
@@ -13,9 +14,11 @@ const mockSymptomValidationService = mock(() =>
 
 beforeEach(() => {
 	mockSearchService.mockReset();
+	mockGetDoctorService.mockReset();
 	mockFeedbackService.mockReset();
 	mockSymptomValidationService.mockReset();
 	mockSearchService.mockImplementation(() => Promise.resolve([]));
+	mockGetDoctorService.mockImplementation(() => Promise.resolve(null));
 	mockFeedbackService.mockImplementation(() => Promise.resolve());
 	mockSymptomValidationService.mockImplementation(() =>
 		Promise.resolve({ isDescriptiveEnough: true }),
@@ -25,6 +28,7 @@ beforeEach(() => {
 function makeApp() {
 	return createApp({
 		searchService: mockSearchService,
+		getDoctorService: mockGetDoctorService,
 		feedbackService: mockFeedbackService,
 		symptomValidationService: mockSymptomValidationService,
 	});
@@ -175,6 +179,59 @@ describe("POST /doctors/search", () => {
 		const app = makeApp();
 		const res = await app.fetch(searchRequest({ symptoms: "pain", limit: -1 }));
 		expect(res.status).toBe(400);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// GET /doctors/:id
+// ---------------------------------------------------------------------------
+
+describe("GET /doctors/:id", () => {
+	function doctorRequest(id: string | number) {
+		return new Request(`http://localhost/doctors/${id}`);
+	}
+
+	test("returns 400 for an invalid doctor id", async () => {
+		const app = makeApp();
+		const res = await app.fetch(doctorRequest("abc"));
+		expect(res.status).toBe(400);
+		expect(await json(res)).toEqual({ error: "invalid doctor id" });
+	});
+
+	test("returns 404 when the doctor does not exist", async () => {
+		mockGetDoctorService.mockImplementation(() => Promise.resolve(null));
+		const app = makeApp();
+		const res = await app.fetch(doctorRequest(123));
+		expect(res.status).toBe(404);
+		expect(await json(res)).toEqual({ error: "doctor not found" });
+		expect(mockGetDoctorService).toHaveBeenCalledWith(123);
+	});
+
+	test("returns 200 and doctor payload when doctor is found", async () => {
+		const doctor = { id: 7, full_name: "Dr. Seven" };
+		mockGetDoctorService.mockImplementation(() => Promise.resolve(doctor));
+		const app = makeApp();
+		const res = await app.fetch(doctorRequest(7));
+		expect(res.status).toBe(200);
+		expect(await json(res)).toEqual({ doctor });
+		expect(mockGetDoctorService).toHaveBeenCalledWith(7);
+	});
+
+	test("returns 500 when getDoctorService is not configured", async () => {
+		const app = createApp({});
+		const res = await app.fetch(doctorRequest(1));
+		expect(res.status).toBe(500);
+		expect(await json(res)).toEqual({ error: "get doctor service is not configured" });
+	});
+
+	test("returns 500 when getDoctorService throws", async () => {
+		mockGetDoctorService.mockImplementation(() =>
+			Promise.reject(new Error("database unavailable")),
+		);
+		const app = makeApp();
+		const res = await app.fetch(doctorRequest(3));
+		expect(res.status).toBe(500);
+		expect(await json(res)).toEqual({ error: "database unavailable" });
 	});
 });
 
