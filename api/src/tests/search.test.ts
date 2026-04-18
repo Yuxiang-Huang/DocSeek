@@ -5,6 +5,7 @@ import {
 	requestEmbedding,
 	requestDoctorSortFromOpenAI,
 	createDoctorSearchService,
+	createGetDoctorService,
 	type DoctorRow,
 } from "../search";
 
@@ -286,5 +287,38 @@ describe("createDoctorSearchService", () => {
 		const service = createDoctorSearchService(fakeConfig);
 		await service({ symptoms: "knee pain" });
 		expect(mockSql).toHaveBeenCalledTimes(1);
+	});
+});
+
+// ===========================================================================
+// createGetDoctorService
+// ===========================================================================
+
+describe("createGetDoctorService", () => {
+	const originalSQL = (Bun as unknown as Record<string, unknown>).SQL;
+	const mockSql = mock(() => Promise.resolve([]));
+
+	beforeEach(() => {
+		mockSql.mockReset();
+		mockSql.mockImplementation(() => Promise.resolve([]));
+		(Bun as unknown as Record<string, unknown>).SQL = function MockSQL() {
+			return mockSql;
+		};
+	});
+
+	afterEach(() => {
+		(Bun as unknown as Record<string, unknown>).SQL = originalSQL;
+	});
+
+	test("returns null when no doctor row exists", async () => {
+		const service = createGetDoctorService({ databaseUrl: "mock://db" });
+		await expect(service(123)).resolves.toBeNull();
+	});
+
+	test("returns the first doctor row when one exists", async () => {
+		const doctor = makeDoctor(4);
+		mockSql.mockImplementation(() => Promise.resolve([doctor]));
+		const service = createGetDoctorService({ databaseUrl: "mock://db" });
+		await expect(service(4)).resolves.toEqual(doctor);
 	});
 });
