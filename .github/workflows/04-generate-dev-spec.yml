@@ -20,9 +20,6 @@ permissions:
 
 jobs:
   assign-dev-spec:
-    if: >
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.user.login == 'github-copilot[bot]'
     runs-on: ubuntu-latest
 
     steps:
@@ -31,41 +28,82 @@ jobs:
       - name: Resolve tests stage issue
         id: tests
         env:
-          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.repository }}
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          printf '%s' "${PR_BODY}" > "${RUNNER_TEMP}/pr-body.md"
-          node .github/scripts/stage-issue-policy.js outputs \
-            --body-file "${RUNNER_TEMP}/pr-body.md" \
-            --output-file "${RUNNER_TEMP}/pr-outputs"
-
-          TESTS_ISSUE=$(grep '^closes_issue=' "${RUNNER_TEMP}/pr-outputs" | cut -d= -f2-)
-          if [ -z "${TESTS_ISSUE}" ]; then
+          if [ "${PR_MERGED}" != "true" ]; then
             echo "advance=false" >> "${GITHUB_OUTPUT}"
-            echo "PR #${PR_NUMBER} does not close a stage issue; skipping."
+            echo "PR #${PR_NUMBER} was closed without merge; skipping."
             exit 0
           fi
 
-          gh issue view "${TESTS_ISSUE}" \
-            --repo "${REPO}" \
-            --json body \
-            --jq '.body' > "${RUNNER_TEMP}/tests-issue.md"
+          case "${PR_AUTHOR}" in
+            Copilot|github-copilot[bot]) ;;
+            *)
+              echo "advance=false" >> "${GITHUB_OUTPUT}"
+              echo "PR #${PR_NUMBER} was authored by '${PR_AUTHOR}', not Copilot; skipping."
+              exit 0
+              ;;
+          esac
 
-          node .github/scripts/stage-issue-policy.js outputs \
-            --body-file "${RUNNER_TEMP}/tests-issue.md" \
-            --output-file "${GITHUB_OUTPUT}"
+          TESTS_ISSUE=$(gh api graphql \
+            -F owner="${OWNER}" \
+            -F repo="${REPO_NAME}" \
+            -F pr="${PR_NUMBER}" \
+            -f query='
+              query($owner: String!, $repo: String!, $pr: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $pr) {
+                    closingIssuesReferences(first: 20) {
+                      nodes {
+                        number
+                        labels(first: 20) {
+                          nodes { name }
+                        }
+                      }
+                    }
+                  }
+                }
+              }' \
+            --jq 'first(.data.repository.pullRequest.closingIssuesReferences.nodes[]
+              | select([.labels.nodes[].name] | index("copilot-tests"))
+              | .number) // empty')
 
-          STAGE=$(grep '^stage=' "${GITHUB_OUTPUT}" | tail -1 | cut -d= -f2-)
-          if [ "${STAGE}" != "tests" ]; then
-            echo "advance=false" >> "${GITHUB_OUTPUT}"
-            echo "Closed issue #${TESTS_ISSUE} is stage '${STAGE}', not tests; skipping."
-            exit 0
+          if [ -z "${TESTS_ISSUE}" ]; then
+            echo "ERROR: PR #${PR_NUMBER} has no linked closing issue labeled 'copilot-tests'."
+            echo "Link the tests stage issue in the PR Development section or with a closing keyword, then rerun."
+            exit 1
+          fi
+
+          PARENT_ISSUE=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${REPO}/issues/${TESTS_ISSUE}/parent" \
+            --jq '.number')
+
+          if [ -z "${PARENT_ISSUE}" ]; then
+            echo "ERROR: tests issue #${TESTS_ISSUE} has no parent user story."
+            exit 1
+          fi
+
+          DEV_SPEC_ISSUE=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${REPO}/issues/${PARENT_ISSUE}/sub_issues?per_page=100" \
+            --jq 'first(.[] | select([.labels[].name] | index("copilot-dev-spec")) | .number) // empty')
+
+          if [ -z "${DEV_SPEC_ISSUE}" ]; then
+            echo "ERROR: parent issue #${PARENT_ISSUE} has no sub-issue labeled 'copilot-dev-spec'."
+            exit 1
           fi
 
           echo "advance=true" >> "${GITHUB_OUTPUT}"
+          echo "parent_story=${PARENT_ISSUE}" >> "${GITHUB_OUTPUT}"
           echo "tests_issue=${TESTS_ISSUE}" >> "${GITHUB_OUTPUT}"
+          echo "dev_spec_issue=${DEV_SPEC_ISSUE}" >> "${GITHUB_OUTPUT}"
 
       - name: Gather merged test PR diff
         if: steps.tests.outputs.advance == 'true'
