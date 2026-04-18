@@ -995,6 +995,67 @@ a {
 	opacity: 0.5;
 }
 
+.copy-link-button {
+	gap: 0.5rem;
+}
+
+.copy-link-success {
+	color: #8fffd3;
+	border-color: rgba(21, 96, 78, 0.4) !important;
+	background: rgba(21, 96, 78, 0.24) !important;
+}
+
+.copy-link-error {
+	margin: 0.75rem 0 0;
+	font-size: 0.92rem;
+	color: var(--danger);
+}
+
+.copy-link-error a {
+	color: #a9dfff;
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
+
+.physician-profile-card h1.doctor-card-name {
+	margin: 0.75rem 0 0;
+	font-size: clamp(2.4rem, 4.4vw, 4rem);
+	line-height: 0.98;
+	letter-spacing: -0.04em;
+}
+
+.physician-profile-unavailable {
+	margin-top: 2.5rem;
+	padding: 2.5rem 2rem;
+	border-radius: 2rem;
+	border: 1px solid rgba(94, 123, 199, 0.28);
+	background: linear-gradient(
+		180deg,
+		rgba(13, 22, 47, 0.95),
+		rgba(15, 25, 53, 0.88)
+	);
+	text-align: center;
+}
+
+.physician-profile-unavailable-icon {
+	color: var(--text-muted);
+	margin-bottom: 1rem;
+}
+
+.physician-profile-unavailable-title {
+	margin: 0 0 0.6rem;
+	font-size: clamp(1.6rem, 3vw, 2.4rem);
+	font-weight: 500;
+	color: var(--text-soft);
+}
+
+.physician-profile-unavailable-body {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
 .background-orb {
 	position: absolute;
 	border-radius: 999px;
