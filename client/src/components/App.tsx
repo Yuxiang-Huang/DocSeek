@@ -6,12 +6,14 @@ import {
 	Bookmark,
 	BookmarkCheck,
 	Check,
+	EyeOff,
 	Filter,
 	Link2,
 	Search,
 	Stethoscope,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { useBlockedPhysicians } from "../hooks/useBlockedPhysicians";
 import { useCopyPhysicianLink } from "../hooks/useCopyPhysicianLink";
 import { useSavedPhysicians } from "../hooks/useSavedPhysicians";
 import { calculateDistance, formatDistance } from "../utils/distance";
@@ -126,6 +128,7 @@ type DoctorRecommendationCardProps = {
 	isSaved?: boolean;
 	onSave?: () => void;
 	onUnsave?: () => void;
+	onBlock?: () => void;
 	userLocation: UserLocation | null;
 };
 
@@ -950,6 +953,7 @@ export function DoctorRecommendationCard({
 	isSaved = false,
 	onSave,
 	onUnsave,
+	onBlock,
 	userLocation,
 }: DoctorRecommendationCardProps) {
 	const activeDoctor = doctors[activeDoctorIndex];
@@ -1015,6 +1019,17 @@ export function DoctorRecommendationCard({
 									Save for later
 								</>
 							)}
+						</button>
+					) : null}
+					{onBlock ? (
+						<button
+							type="button"
+							className="block-button"
+							onClick={onBlock}
+							aria-label={`Do not show ${activeDoctor.full_name} again`}
+						>
+							<EyeOff aria-hidden size={18} strokeWidth={2} />
+							Do not show again
 						</button>
 					) : null}
 					<p
@@ -1289,6 +1304,7 @@ export function ResultsPage({
 }: ResultsPageProps) {
 	const navigate = useNavigate();
 	const savedPhysicians = useSavedPhysicians();
+	const blockedPhysicians = useBlockedPhysicians();
 	const [doctors, setDoctors] = useState<Doctor[]>([]);
 	const [activeDoctorIndex, setActiveDoctorIndex] = useState(0);
 	const [errorMessage, setErrorMessage] = useState("");
@@ -1303,6 +1319,11 @@ export function ResultsPage({
 	const [refineOnlyAccepting, setRefineOnlyAccepting] = useState(
 		initialFilters?.onlyAcceptingNewPatients ?? false,
 	);
+	const [blockToast, setBlockToast] = useState<{
+		doctorName: string;
+		doctorId: number;
+	} | null>(null);
+	const blockToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		setRefineLocation(initialFilters?.location ?? "");
@@ -1321,16 +1342,54 @@ export function ResultsPage({
 		);
 	}, []);
 
+	useEffect(() => {
+		return () => {
+			if (blockToastTimerRef.current !== null) {
+				clearTimeout(blockToastTimerRef.current);
+			}
+		};
+	}, []);
+
 	function handleSortChange(option: SortOption) {
 		setSortOption(option);
 		saveSortOption(option);
 		setActiveDoctorIndex(0);
 	}
 
-	const displayedDoctors =
+	const sortedDoctors =
 		sortOption === "earliest_appointment"
 			? sortDoctorsByEarliestAppointment(doctors)
 			: doctors;
+
+	const displayedDoctors = sortedDoctors.filter(
+		(d) => !blockedPhysicians.isBlocked(d.id),
+	);
+
+	function handleBlockDoctor(doctor: Doctor) {
+		blockedPhysicians.blockDoctor(doctor);
+
+		if (blockToastTimerRef.current !== null) {
+			clearTimeout(blockToastTimerRef.current);
+		}
+		setBlockToast({ doctorName: doctor.full_name, doctorId: doctor.id });
+		blockToastTimerRef.current = setTimeout(() => {
+			setBlockToast(null);
+			blockToastTimerRef.current = null;
+		}, 5000);
+
+		setActiveDoctorIndex((currentIndex) =>
+			Math.min(currentIndex, Math.max(0, displayedDoctors.length - 2)),
+		);
+	}
+
+	function handleUndoBlock(doctorId: number) {
+		blockedPhysicians.unblockDoctor(doctorId);
+		if (blockToastTimerRef.current !== null) {
+			clearTimeout(blockToastTimerRef.current);
+			blockToastTimerRef.current = null;
+		}
+		setBlockToast(null);
+	}
 
 	useEffect(() => {
 		let ignore = false;
@@ -1435,6 +1494,22 @@ export function ResultsPage({
 							: "No doctor recommendations are currently displayed."}
 				</div>
 
+				{blockToast ? (
+					<div className="block-toast" role="status" aria-live="polite">
+						<span>
+							<strong>{blockToast.doctorName}</strong> will not appear in your
+							results.
+						</span>
+						<button
+							type="button"
+							className="block-toast-undo"
+							onClick={() => handleUndoBlock(blockToast.doctorId)}
+						>
+							Undo
+						</button>
+					</div>
+				) : null}
+
 				{isLoading ? (
 					<p className="loading-message">Loading recommendations…</p>
 				) : null}
@@ -1485,6 +1560,10 @@ export function ResultsPage({
 						}
 						onUnsave={() =>
 							savedPhysicians.removeSavedDoctor(displayedDoctors[activeDoctorIndex]?.id)
+						}
+						onBlock={() =>
+							displayedDoctors[activeDoctorIndex] &&
+							handleBlockDoctor(displayedDoctors[activeDoctorIndex])
 						}
 						userLocation={userLocation}
 					/>
