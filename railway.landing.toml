@@ -1,7 +1,9 @@
 # Use when the Railway service root is the monorepo root (not `landingPage/`).
-# In Railway: service → Settings → set "Config as code" / config file path to this file:
+# In Railway: service → Settings → set "Config as code" path to:
 #   /railway.landing.toml
-# Recommended: set Root Directory to `landingPage` and use landingPage/railway.toml instead.
+#
+# When the service Root Directory is `landingPage`, point config at (repo-absolute path):
+#   /landingPage/railway.json
 
 [build]
 builder = "DOCKERFILE"

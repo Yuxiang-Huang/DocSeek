@@ -67,8 +67,12 @@ uv run python generate_specialty_embeddings.py
 
 ## Railway (landing page)
 
-This repo is a **monorepo**. If Railway builds from the repository root, Railpack sees no root `package.json` and cannot infer a Node app.
+Use **`landingPage`** as the service **Root Directory** so the build sees `package.json` and `Dockerfile` there.
 
-**Recommended:** open the landing **service** in Railway → **Settings** → **Root Directory** → set to `landingPage`. Redeploy. That directory already has `railway.toml` (Dockerfile builder) and a `Dockerfile`.
+Railway’s **config-as-code file is resolved from the repository root**, not from the Root Directory setting. So you must also set the service **config file path** (sometimes labeled “Railway config file” or under *Settings → Build → Config file*) to:
 
-**Alternative:** keep the service root as the repo root, then set the **Railway config file** (config as code) to **`/railway.landing.toml`**, which builds via **`Dockerfile.landing`** in the repo root.
+`/landingPage/railway.json`
+
+That file pins the **Dockerfile** builder so Railway does not try Railpack on this static Vite app.
+
+If you intentionally keep the service root at the **monorepo root** instead, use config path **`/railway.landing.toml`** (builds via `Dockerfile.landing` at the repo root).
