@@ -7,10 +7,11 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { ReactNode } from "react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
 	buildMatchExplanation,
+	type Doctor,
 	DoctorRecommendationCard,
 	direct_to_booking,
 	EmergencyCareAlert,
@@ -26,24 +27,23 @@ import {
 	HomePage,
 	loadSortOption,
 	normalizeSymptoms,
-	resolveSymptomsSubmission,
 	ResultsActiveFilters,
 	ResultsHeader,
 	ResultsPage,
 	ResultsRefineFilters,
 	ResultsSearchSummary,
-	saveSortOption,
-	searchDoctors,
+	resolveSymptomsSubmission,
 	SearchFiltersForm,
 	SearchForm,
 	SearchHero,
 	SearchPageShell,
+	saveSortOption,
+	searchDoctors,
 	sortDoctorsByEarliestAppointment,
 	submitFeedback,
 	symptomsSuggestEmergencyCare,
 	validateSymptoms,
 	validateSymptomsForDoctorSearch,
-	type Doctor,
 } from "../components/App";
 
 // ---------------------------------------------------------------------------
@@ -220,9 +220,9 @@ describe("symptomsSuggestEmergencyCare", () => {
 
 	test("returns true for 'stroke'", () => {
 		// input: "I think I am having a stroke"  →  expected: true
-		expect(
-			symptomsSuggestEmergencyCare("I think I am having a stroke"),
-		).toBe(true);
+		expect(symptomsSuggestEmergencyCare("I think I am having a stroke")).toBe(
+			true,
+		);
 	});
 
 	test("returns true for 'shortness of breath'", () => {
@@ -232,9 +232,9 @@ describe("symptomsSuggestEmergencyCare", () => {
 
 	test("returns true for 'worst headache' (thunderclap proxy phrase)", () => {
 		// input: "worst headache of my life"  →  expected: true
-		expect(
-			symptomsSuggestEmergencyCare("worst headache of my life"),
-		).toBe(true);
+		expect(symptomsSuggestEmergencyCare("worst headache of my life")).toBe(
+			true,
+		);
 	});
 
 	test("returns true for 'suicidal'", () => {
@@ -278,9 +278,9 @@ describe("symptomsSuggestEmergencyCare", () => {
 
 	test("returns true for 'passed out'", () => {
 		// input: "I passed out this morning"  →  expected: true
-		expect(
-			symptomsSuggestEmergencyCare("I passed out this morning"),
-		).toBe(true);
+		expect(symptomsSuggestEmergencyCare("I passed out this morning")).toBe(
+			true,
+		);
 	});
 });
 
@@ -293,7 +293,8 @@ describe("validateSymptomsForDoctorSearch", () => {
 		// input: ""  →  expected: { ok: false, message: /enter your current symptoms/ }
 		const result = validateSymptomsForDoctorSearch("");
 		expect(result.ok).toBe(false);
-		if (!result.ok) expect(result.message).toMatch(/enter your current symptoms/i);
+		if (!result.ok)
+			expect(result.message).toMatch(/enter your current symptoms/i);
 	});
 
 	test("returns ok:false for whitespace-only input", () => {
@@ -495,7 +496,7 @@ describe("getNextRecommendationLabel", () => {
 		);
 	});
 
-	test("returns \"You've reached the last recommendation\" when hasNextDoctor is false", () => {
+	test('returns "You\'ve reached the last recommendation" when hasNextDoctor is false', () => {
 		// input: false  →  expected: "You've reached the last recommendation"
 		expect(getNextRecommendationLabel(false)).toBe(
 			"You've reached the last recommendation",
@@ -557,9 +558,7 @@ describe("direct_to_booking", () => {
 		const doctor = makeDoctor({
 			profile_url: "https://providers.upmc.com/doc/1",
 		});
-		expect(direct_to_booking(doctor)).toBe(
-			"https://providers.upmc.com/doc/1",
-		);
+		expect(direct_to_booking(doctor)).toBe("https://providers.upmc.com/doc/1");
 	});
 
 	test("returns null when the doctor has no profile_url", () => {
@@ -575,9 +574,7 @@ describe("direct_to_booking", () => {
 			profile_url: "https://providers.upmc.com/doc/42",
 			book_appointment_url: "https://direct-book.example.com",
 		});
-		expect(direct_to_booking(doctor)).toBe(
-			"https://providers.upmc.com/doc/42",
-		);
+		expect(direct_to_booking(doctor)).toBe("https://providers.upmc.com/doc/42");
 	});
 });
 
@@ -646,9 +643,11 @@ describe("formatMatchedSpecialties", () => {
 	test("splits multiple specialties on semicolons", () => {
 		// input: "Neurology;Cardiology;Oncology"
 		// expected: ["Neurology", "Cardiology", "Oncology"]
-		expect(
-			formatMatchedSpecialties("Neurology;Cardiology;Oncology"),
-		).toEqual(["Neurology", "Cardiology", "Oncology"]);
+		expect(formatMatchedSpecialties("Neurology;Cardiology;Oncology")).toEqual([
+			"Neurology",
+			"Cardiology",
+			"Oncology",
+		]);
 	});
 
 	test("trims whitespace around each specialty name", () => {
@@ -661,9 +660,10 @@ describe("formatMatchedSpecialties", () => {
 
 	test("filters out empty segments from double or trailing semicolons", () => {
 		// input: "Neurology;;Cardiology;"  →  expected: ["Neurology", "Cardiology"]
-		expect(
-			formatMatchedSpecialties("Neurology;;Cardiology;"),
-		).toEqual(["Neurology", "Cardiology"]);
+		expect(formatMatchedSpecialties("Neurology;;Cardiology;")).toEqual([
+			"Neurology",
+			"Cardiology",
+		]);
 	});
 });
 
@@ -707,9 +707,7 @@ describe("buildMatchExplanation", () => {
 	test("trims whitespace from symptoms before including them in the output", () => {
 		// input: symptoms="  headache  "
 		// expected output contains: '"headache"' (trimmed)
-		expect(buildMatchExplanation("  headache  ", null)).toContain(
-			'"headache"',
-		);
+		expect(buildMatchExplanation("  headache  ", null)).toContain('"headache"');
 	});
 
 	test("full output format with specialty", () => {
@@ -1085,13 +1083,11 @@ describe("resolveSymptomsSubmission", () => {
 		const validateSymptomsImpl = vi
 			.fn()
 			.mockResolvedValue({ isDescriptiveEnough: true });
-		const result = await resolveSymptomsSubmission(
-			"  persistent headache  ",
-			{ validateSymptomsImpl },
-		);
+		const result = await resolveSymptomsSubmission("  persistent headache  ", {
+			validateSymptomsImpl,
+		});
 		expect(result.canNavigate).toBe(true);
-		if (result.canNavigate)
-			expect(result.symptoms).toBe("persistent headache");
+		if (result.canNavigate) expect(result.symptoms).toBe("persistent headache");
 	});
 
 	test("resets attempt count and history to zero on a successful validation", async () => {
@@ -1186,9 +1182,9 @@ describe("EmergencyCareAlert", () => {
 
 	test("has aria-live='assertive' so screen readers announce it immediately", () => {
 		render(<EmergencyCareAlert />);
-		expect(
-			screen.getByRole("alert").getAttribute("aria-live"),
-		).toBe("assertive");
+		expect(screen.getByRole("alert").getAttribute("aria-live")).toBe(
+			"assertive",
+		);
 	});
 });
 
@@ -1245,22 +1241,14 @@ describe("SearchPageShell", () => {
 describe("SearchForm", () => {
 	test("renders a textarea with id 'symptoms'", () => {
 		render(
-			<SearchForm
-				symptoms=""
-				onSymptomsChange={vi.fn()}
-				onSubmit={vi.fn()}
-			/>,
+			<SearchForm symptoms="" onSymptomsChange={vi.fn()} onSubmit={vi.fn()} />,
 		);
 		expect(document.getElementById("symptoms")).toBeTruthy();
 	});
 
 	test("renders the submit button with accessible label", () => {
 		render(
-			<SearchForm
-				symptoms=""
-				onSymptomsChange={vi.fn()}
-				onSubmit={vi.fn()}
-			/>,
+			<SearchForm symptoms="" onSymptomsChange={vi.fn()} onSubmit={vi.fn()} />,
 		);
 		expect(
 			screen.getByRole("button", { name: /Find matching doctors/i }),
@@ -1275,9 +1263,9 @@ describe("SearchForm", () => {
 				onSubmit={vi.fn()}
 			/>,
 		);
-		expect(
-			(screen.getByRole("textbox") as HTMLTextAreaElement).value,
-		).toBe("migraine");
+		expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
+			"migraine",
+		);
 	});
 
 	test("calls onSymptomsChange with the new value when the textarea changes", () => {
@@ -1323,15 +1311,9 @@ describe("SearchForm", () => {
 
 	test("does not render the validation message element when message is absent", () => {
 		render(
-			<SearchForm
-				symptoms=""
-				onSymptomsChange={vi.fn()}
-				onSubmit={vi.fn()}
-			/>,
+			<SearchForm symptoms="" onSymptomsChange={vi.fn()} onSubmit={vi.fn()} />,
 		);
-		expect(
-			document.getElementById("symptoms-validation-message"),
-		).toBeNull();
+		expect(document.getElementById("symptoms-validation-message")).toBeNull();
 	});
 
 	test("disables the submit button and shows 'Finding doctors' label when isLoading", () => {
@@ -1358,22 +1340,18 @@ describe("SearchForm", () => {
 				validationMessage="Error!"
 			/>,
 		);
-		expect(
-			screen.getByRole("textbox").getAttribute("aria-describedby"),
-		).toBe("symptoms-validation-message");
+		expect(screen.getByRole("textbox").getAttribute("aria-describedby")).toBe(
+			"symptoms-validation-message",
+		);
 	});
 
 	test("textarea is marked as required", () => {
 		render(
-			<SearchForm
-				symptoms=""
-				onSymptomsChange={vi.fn()}
-				onSubmit={vi.fn()}
-			/>,
+			<SearchForm symptoms="" onSymptomsChange={vi.fn()} onSubmit={vi.fn()} />,
 		);
-		expect(
-			(screen.getByRole("textbox") as HTMLTextAreaElement).required,
-		).toBe(true);
+		expect((screen.getByRole("textbox") as HTMLTextAreaElement).required).toBe(
+			true,
+		);
 	});
 });
 
@@ -1615,9 +1593,7 @@ describe("HomePage", () => {
 		// biome-ignore lint: non-null assertion safe in test context
 		fireEvent.submit(symptomsInput.closest("form")!);
 		await waitFor(() =>
-			expect(
-				screen.getByText(/enter your current symptoms/i),
-			).toBeTruthy(),
+			expect(screen.getByText(/enter your current symptoms/i)).toBeTruthy(),
 		);
 	});
 
@@ -1723,9 +1699,7 @@ describe("FeedbackForm", () => {
 		});
 		// biome-ignore lint: non-null assertion safe in test context
 		fireEvent.submit(
-			screen
-				.getByRole("button", { name: "Submit feedback" })
-				.closest("form")!,
+			screen.getByRole("button", { name: "Submit feedback" }).closest("form")!,
 		);
 		await waitFor(() =>
 			expect(submitFeedbackImpl).toHaveBeenCalledWith(
@@ -1744,9 +1718,7 @@ describe("FeedbackForm", () => {
 		fireEvent.click(screen.getByRole("button", { name: "5 stars" }));
 		// biome-ignore lint: non-null assertion safe in test context
 		fireEvent.submit(
-			screen
-				.getByRole("button", { name: "Submit feedback" })
-				.closest("form")!,
+			screen.getByRole("button", { name: "Submit feedback" }).closest("form")!,
 		);
 		await waitFor(() =>
 			expect(screen.getByText("Thanks for your feedback!")).toBeTruthy(),
@@ -1763,9 +1735,7 @@ describe("FeedbackForm", () => {
 		fireEvent.click(screen.getByRole("button", { name: "2 stars" }));
 		// biome-ignore lint: non-null assertion safe in test context
 		fireEvent.submit(
-			screen
-				.getByRole("button", { name: "Submit feedback" })
-				.closest("form")!,
+			screen.getByRole("button", { name: "Submit feedback" }).closest("form")!,
 		);
 		await waitFor(() =>
 			expect(screen.getByText("Network failure.")).toBeTruthy(),
@@ -1958,9 +1928,7 @@ describe("DoctorRecommendationCard", () => {
 	test("renders matched specialties as list items", () => {
 		render(
 			<DoctorRecommendationCard
-				doctors={[
-					makeDoctor({ matched_specialty: "Neurology;Cardiology" }),
-				]}
+				doctors={[makeDoctor({ matched_specialty: "Neurology;Cardiology" })]}
 				activeDoctorIndex={0}
 				onNextDoctor={vi.fn()}
 				symptoms="headache"
@@ -2111,9 +2079,7 @@ describe("ResultsActiveFilters", () => {
 			/>,
 		);
 		expect(
-			screen.getByText(
-				/Filtered by: Pittsburgh, PA • Accepting new patients/,
-			),
+			screen.getByText(/Filtered by: Pittsburgh, PA • Accepting new patients/),
 		).toBeTruthy();
 	});
 
@@ -2261,18 +2227,14 @@ describe("ResultsHeader", () => {
 	});
 
 	test("hides the back link when includeBackLink is false", () => {
-		render(
-			<ResultsHeader includeBackLink={false} initialSymptoms="cough" />,
-		);
+		render(<ResultsHeader includeBackLink={false} initialSymptoms="cough" />);
 		expect(
 			screen.queryByRole("link", { name: /Start a new search/i }),
 		).toBeNull();
 	});
 
 	test("shows the back link when includeBackLink is true", () => {
-		render(
-			<ResultsHeader includeBackLink={true} initialSymptoms="cough" />,
-		);
+		render(<ResultsHeader includeBackLink={true} initialSymptoms="cough" />);
 		expect(
 			screen.getByRole("link", { name: /Start a new search/i }),
 		).toBeTruthy();
@@ -2298,9 +2260,7 @@ describe("ResultsHeader", () => {
 				activeFilters={{}}
 			/>,
 		);
-		expect(
-			screen.queryByRole("button", { name: /Refine/i }),
-		).toBeNull();
+		expect(screen.queryByRole("button", { name: /Refine/i })).toBeNull();
 	});
 });
 
@@ -2326,9 +2286,7 @@ describe("ResultsSearchSummary", () => {
 
 	test("renders different symptom strings correctly", () => {
 		render(<ResultsSearchSummary symptoms="lower back pain and fatigue" />);
-		expect(
-			screen.getByText("lower back pain and fatigue"),
-		).toBeTruthy();
+		expect(screen.getByText("lower back pain and fatigue")).toBeTruthy();
 	});
 });
 
@@ -2367,9 +2325,7 @@ describe("ResultsPage", () => {
 			/>,
 		);
 		await waitFor(() =>
-			expect(
-				screen.getByRole("heading", { name: "Dr. Results" }),
-			).toBeTruthy(),
+			expect(screen.getByRole("heading", { name: "Dr. Results" })).toBeTruthy(),
 		);
 	});
 
@@ -2377,14 +2333,10 @@ describe("ResultsPage", () => {
 		render(
 			<ResultsPage
 				initialSymptoms="headaches"
-				searchDoctorsImpl={vi
-					.fn()
-					.mockRejectedValue(new Error("API is down."))}
+				searchDoctorsImpl={vi.fn().mockRejectedValue(new Error("API is down."))}
 			/>,
 		);
-		await waitFor(() =>
-			expect(screen.getByText("API is down.")).toBeTruthy(),
-		);
+		await waitFor(() => expect(screen.getByText("API is down.")).toBeTruthy());
 	});
 
 	test("shows 'No doctors matched' message when search returns an empty array", async () => {
@@ -2450,11 +2402,15 @@ describe("ResultsPage", () => {
 			/>,
 		);
 		await waitFor(() =>
-			expect(screen.getByRole("heading", { name: "Dr. Sort Test" })).toBeTruthy(),
+			expect(
+				screen.getByRole("heading", { name: "Dr. Sort Test" }),
+			).toBeTruthy(),
 		);
 		const select = screen.getByRole("combobox", { name: "Sort results" });
 		expect(select).toBeTruthy();
-		expect(select.querySelector?.("option[value='relevance']") ?? select).toBeTruthy();
+		expect(
+			select.querySelector?.("option[value='relevance']") ?? select,
+		).toBeTruthy();
 		expect(
 			document.querySelector("option[value='earliest_appointment']"),
 		).toBeTruthy();
@@ -2628,7 +2584,11 @@ describe("sortDoctorsByEarliestAppointment", () => {
 			full_name: "Dr. NoDate2",
 			next_available: undefined,
 		});
-		const result = sortDoctorsByEarliestAppointment([noDate1, withDate, noDate2]);
+		const result = sortDoctorsByEarliestAppointment([
+			noDate1,
+			withDate,
+			noDate2,
+		]);
 		expect(result[0].full_name).toBe("Dr. HasDate");
 		expect(result.slice(1).map((d) => d.full_name)).toEqual([
 			"Dr. NoDate1",
