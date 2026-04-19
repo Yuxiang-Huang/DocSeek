@@ -39,6 +39,7 @@ export type Doctor = {
 	matched_specialty: string | null;
 	latitude: number | null;
 	longitude: number | null;
+	next_available?: string | null;
 };
 
 type UserLocation = {
@@ -365,6 +366,65 @@ export function formatMatchedSpecialties(matched: string | null): string[] {
 		.split(";")
 		.map((s) => s.trim())
 		.filter(Boolean);
+}
+
+export type SortOption = "relevance" | "earliest_appointment";
+
+const SORT_STORAGE_KEY = "docseek-sort-option";
+
+export function loadSortOption(): SortOption {
+	try {
+		const raw = sessionStorage.getItem(SORT_STORAGE_KEY);
+		if (raw === "earliest_appointment") return "earliest_appointment";
+	} catch {
+		// sessionStorage unavailable
+	}
+	return "relevance";
+}
+
+export function saveSortOption(option: SortOption): void {
+	try {
+		sessionStorage.setItem(SORT_STORAGE_KEY, option);
+	} catch {
+		// sessionStorage unavailable
+	}
+}
+
+export function formatNextAvailable(value: string | null | undefined): string {
+	if (!value) return "No appointment data";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "No appointment data";
+	return date.toLocaleString(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+		timeZoneName: "short",
+	});
+}
+
+export function sortDoctorsByEarliestAppointment(doctors: Doctor[]): Doctor[] {
+	const withDate: Doctor[] = [];
+	const withoutDate: Doctor[] = [];
+	for (const d of doctors) {
+		const t = d.next_available ? new Date(d.next_available).getTime() : NaN;
+		if (!Number.isNaN(t)) {
+			withDate.push(d);
+		} else {
+			withoutDate.push(d);
+		}
+	}
+	withDate.sort((a, b) => {
+		const tA = new Date(a.next_available!).getTime();
+		const tB = new Date(b.next_available!).getTime();
+		if (tA !== tB) return tA - tB;
+		// Secondary sort: by match_score descending (relevance)
+		const sA = a.match_score ?? -1;
+		const sB = b.match_score ?? -1;
+		return sB - sA;
+	});
+	return [...withDate, ...withoutDate];
 }
 
 export function buildMatchExplanation(
@@ -1003,6 +1063,16 @@ export function DoctorRecommendationCard({
 				<p className="doctor-detail">
 					{activeDoctor.primary_phone ?? "Phone number not listed"}
 				</p>
+				<p
+					className={
+						activeDoctor.next_available
+							? "doctor-detail next-available"
+							: "doctor-detail next-available next-available-unavailable"
+					}
+				>
+					<span className="next-available-label">Next available: </span>
+					{formatNextAvailable(activeDoctor.next_available)}
+				</p>
 			</div>
 			<FeedbackForm doctorId={activeDoctor.id} />
 			<div className="doctor-links">
@@ -1224,6 +1294,9 @@ export function ResultsPage({
 	const [errorMessage, setErrorMessage] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isRefining, setIsRefining] = useState(false);
+	const [sortOption, setSortOption] = useState<SortOption>(() =>
+		loadSortOption(),
+	);
 	const [refineLocation, setRefineLocation] = useState(
 		initialFilters?.location ?? "",
 	);
@@ -1247,6 +1320,17 @@ export function ResultsPage({
 			() => {},
 		);
 	}, []);
+
+	function handleSortChange(option: SortOption) {
+		setSortOption(option);
+		saveSortOption(option);
+		setActiveDoctorIndex(0);
+	}
+
+	const displayedDoctors =
+		sortOption === "earliest_appointment"
+			? sortDoctorsByEarliestAppointment(doctors)
+			: doctors;
 
 	useEffect(() => {
 		let ignore = false;
@@ -1361,24 +1445,46 @@ export function ResultsPage({
 					</p>
 				) : null}
 
+				{!isLoading && doctors.length > 0 ? (
+					<div className="results-sort-bar">
+						<label htmlFor="sort-select" className="results-sort-label">
+							Sort:
+						</label>
+						<select
+							id="sort-select"
+							className="results-sort-select"
+							value={sortOption}
+							onChange={(e) =>
+								handleSortChange(e.target.value as SortOption)
+							}
+							aria-label="Sort results"
+						>
+							<option value="relevance">Relevance</option>
+							<option value="earliest_appointment">
+								Earliest appointment
+							</option>
+						</select>
+					</div>
+				) : null}
+
 				{!symptomsSuggestEmergencyCare(initialSymptoms) &&
 				!errorMessage &&
 				!isLoading &&
-				doctors.length > 0 ? (
+				displayedDoctors.length > 0 ? (
 					<DoctorRecommendationCard
-						doctors={doctors}
+						doctors={displayedDoctors}
 						activeDoctorIndex={activeDoctorIndex}
 						symptoms={initialSymptoms}
 						onNextDoctor={() =>
 							setActiveDoctorIndex((currentIndex) => currentIndex + 1)
 						}
-						isSaved={savedPhysicians.isSaved(doctors[activeDoctorIndex]?.id)}
+						isSaved={savedPhysicians.isSaved(displayedDoctors[activeDoctorIndex]?.id)}
 						onSave={() =>
-							doctors[activeDoctorIndex] &&
-							savedPhysicians.addSavedDoctor(doctors[activeDoctorIndex])
+							displayedDoctors[activeDoctorIndex] &&
+							savedPhysicians.addSavedDoctor(displayedDoctors[activeDoctorIndex])
 						}
 						onUnsave={() =>
-							savedPhysicians.removeSavedDoctor(doctors[activeDoctorIndex]?.id)
+							savedPhysicians.removeSavedDoctor(displayedDoctors[activeDoctorIndex]?.id)
 						}
 						userLocation={userLocation}
 					/>

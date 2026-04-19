@@ -1,0 +1,2 @@
+ALTER TABLE doctors
+    ADD COLUMN IF NOT EXISTS next_available TIMESTAMPTZ;

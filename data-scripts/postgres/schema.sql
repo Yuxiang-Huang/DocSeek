@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS doctors (
     book_appointment_url TEXT,
     primary_location TEXT,
     primary_phone TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    next_available TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS hospitals (

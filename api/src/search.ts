@@ -24,6 +24,7 @@ export type DoctorRow = {
 	matched_specialty: string | null;
 	latitude: number | null;
 	longitude: number | null;
+	next_available: string | null;
 };
 
 type EmbeddingsResponse = {

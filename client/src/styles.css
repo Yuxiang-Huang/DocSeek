@@ -551,6 +551,34 @@ a {
 	background: rgba(12, 22, 52, 0.5);
 }
 
+.results-sort-bar {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	margin-top: 1.25rem;
+}
+
+.results-sort-label {
+	color: var(--text-soft);
+	font-size: 0.9rem;
+	white-space: nowrap;
+}
+
+.results-sort-select {
+	padding: 0.4rem 0.9rem;
+	border-radius: 999px;
+	border: 1px solid rgba(32, 216, 255, 0.2);
+	background: rgba(14, 26, 60, 0.7);
+	color: #a9dfff;
+	font-size: 0.9rem;
+	cursor: pointer;
+}
+
+.results-sort-select:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
+}
+
 .refine-heading {
 	margin: 0 0 1rem;
 	font-size: 1rem;
@@ -882,6 +910,22 @@ a {
 .distance-label {
 	color: var(--teal);
 	font-size: 0.95rem;
+}
+
+.next-available-label {
+	color: rgba(147, 193, 229, 0.78);
+	font-size: 0.78rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.next-available {
+	color: #8fffd3;
+}
+
+.next-available-unavailable {
+	color: var(--text-soft);
+	font-style: italic;
 }
 
 .feedback-section {
