@@ -54,29 +54,32 @@ jobs:
           TESTS_ISSUE=$(gh api graphql \
             -F owner="${OWNER}" \
             -F repo="${REPO_NAME}" \
-            -F pr="${PR_NUMBER}" \
             -f query='
-              query($owner: String!, $repo: String!, $pr: Int!) {
+              query($owner: String!, $repo: String!) {
                 repository(owner: $owner, name: $repo) {
-                  pullRequest(number: $pr) {
-                    closingIssuesReferences(first: 20) {
-                      nodes {
-                        number
-                        labels(first: 20) {
-                          nodes { name }
+                  issues(first: 100, labels: ["copilot-tests"], states: [OPEN, CLOSED]) {
+                    nodes {
+                      number
+                      timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT]) {
+                        nodes {
+                          ... on CrossReferencedEvent {
+                            source {
+                              __typename
+                              ... on PullRequest { number }
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
               }' \
-            --jq 'first(.data.repository.pullRequest.closingIssuesReferences.nodes[]
-              | select([.labels.nodes[].name] | index("copilot-tests"))
-              | .number) // empty')
+            --jq "first(.data.repository.issues.nodes[]
+              | select(any(.timelineItems.nodes[]; .source.__typename == \"PullRequest\" and .source.number == ${PR_NUMBER}))
+              | .number) // empty")
 
           if [ -z "${TESTS_ISSUE}" ]; then
-            echo "ERROR: PR #${PR_NUMBER} has no linked closing issue labeled 'copilot-tests'."
-            echo "Link the tests stage issue in the PR Development section or with a closing keyword, then rerun."
+            echo "ERROR: no issue labeled 'copilot-tests' has a timeline reference from PR #${PR_NUMBER}."
             exit 1
           fi
 
