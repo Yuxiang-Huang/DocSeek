@@ -408,7 +408,8 @@ export function sortDoctorsByEarliestAppointment(doctors: Doctor[]): Doctor[] {
 	const withDate: Doctor[] = [];
 	const withoutDate: Doctor[] = [];
 	for (const d of doctors) {
-		if (d.next_available) {
+		const t = d.next_available ? new Date(d.next_available).getTime() : NaN;
+		if (!Number.isNaN(t)) {
 			withDate.push(d);
 		} else {
 			withoutDate.push(d);
