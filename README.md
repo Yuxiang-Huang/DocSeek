@@ -64,3 +64,11 @@ uv run python generate_specialty_embeddings.py
 
 - Frontend: React, Vite, TanStack Router
 - Backend: Hono on Bun
+
+## Railway (landing page)
+
+This repo is a **monorepo**. If Railway builds from the repository root, Railpack sees no root `package.json` and cannot infer a Node app.
+
+**Recommended:** open the landing **service** in Railway → **Settings** → **Root Directory** → set to `landingPage`. Redeploy. That directory already has `railway.toml` (Dockerfile builder) and a `Dockerfile`.
+
+**Alternative:** keep the service root as the repo root, then set the **Railway config file** (config as code) to **`/railway.landing.toml`**, which builds via **`Dockerfile.landing`** in the repo root.
