@@ -7,15 +7,17 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { ReactNode } from "react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
 	buildMatchExplanation,
+	type Doctor,
 	DoctorRecommendationCard,
 	direct_to_booking,
 	EmergencyCareAlert,
 	FeedbackForm,
 	formatMatchedSpecialties,
+	formatNextAvailable,
 	getDoctorSearchUrl,
 	getFallbackDistanceMiles,
 	getMatchQualityLabel,
@@ -23,23 +25,25 @@ import {
 	getResultsNavigation,
 	getSymptomValidationUrl,
 	HomePage,
+	loadSortOption,
 	normalizeSymptoms,
-	resolveSymptomsSubmission,
 	ResultsActiveFilters,
 	ResultsHeader,
 	ResultsPage,
 	ResultsRefineFilters,
 	ResultsSearchSummary,
-	searchDoctors,
+	resolveSymptomsSubmission,
 	SearchFiltersForm,
 	SearchForm,
 	SearchHero,
 	SearchPageShell,
+	saveSortOption,
+	searchDoctors,
+	sortDoctorsByEarliestAppointment,
 	submitFeedback,
 	symptomsSuggestEmergencyCare,
 	validateSymptoms,
 	validateSymptomsForDoctorSearch,
-	type Doctor,
 } from "../components/App";
 
 // ---------------------------------------------------------------------------
@@ -216,9 +220,9 @@ describe("symptomsSuggestEmergencyCare", () => {
 
 	test("returns true for 'stroke'", () => {
 		// input: "I think I am having a stroke"  →  expected: true
-		expect(
-			symptomsSuggestEmergencyCare("I think I am having a stroke"),
-		).toBe(true);
+		expect(symptomsSuggestEmergencyCare("I think I am having a stroke")).toBe(
+			true,
+		);
 	});
 
 	test("returns true for 'shortness of breath'", () => {
@@ -228,9 +232,9 @@ describe("symptomsSuggestEmergencyCare", () => {
 
 	test("returns true for 'worst headache' (thunderclap proxy phrase)", () => {
 		// input: "worst headache of my life"  →  expected: true
-		expect(
-			symptomsSuggestEmergencyCare("worst headache of my life"),
-		).toBe(true);
+		expect(symptomsSuggestEmergencyCare("worst headache of my life")).toBe(
+			true,
+		);
 	});
 
 	test("returns true for 'suicidal'", () => {
@@ -274,9 +278,9 @@ describe("symptomsSuggestEmergencyCare", () => {
 
 	test("returns true for 'passed out'", () => {
 		// input: "I passed out this morning"  →  expected: true
-		expect(
-			symptomsSuggestEmergencyCare("I passed out this morning"),
-		).toBe(true);
+		expect(symptomsSuggestEmergencyCare("I passed out this morning")).toBe(
+			true,
+		);
 	});
 });
 
@@ -289,7 +293,8 @@ describe("validateSymptomsForDoctorSearch", () => {
 		// input: ""  →  expected: { ok: false, message: /enter your current symptoms/ }
 		const result = validateSymptomsForDoctorSearch("");
 		expect(result.ok).toBe(false);
-		if (!result.ok) expect(result.message).toMatch(/enter your current symptoms/i);
+		if (!result.ok)
+			expect(result.message).toMatch(/enter your current symptoms/i);
 	});
 
 	test("returns ok:false for whitespace-only input", () => {
@@ -491,7 +496,7 @@ describe("getNextRecommendationLabel", () => {
 		);
 	});
 
-	test("returns \"You've reached the last recommendation\" when hasNextDoctor is false", () => {
+	test('returns "You\'ve reached the last recommendation" when hasNextDoctor is false', () => {
 		// input: false  →  expected: "You've reached the last recommendation"
 		expect(getNextRecommendationLabel(false)).toBe(
 			"You've reached the last recommendation",
@@ -553,9 +558,7 @@ describe("direct_to_booking", () => {
 		const doctor = makeDoctor({
 			profile_url: "https://providers.upmc.com/doc/1",
 		});
-		expect(direct_to_booking(doctor)).toBe(
-			"https://providers.upmc.com/doc/1",
-		);
+		expect(direct_to_booking(doctor)).toBe("https://providers.upmc.com/doc/1");
 	});
 
 	test("returns null when the doctor has no profile_url", () => {
@@ -571,9 +574,7 @@ describe("direct_to_booking", () => {
 			profile_url: "https://providers.upmc.com/doc/42",
 			book_appointment_url: "https://direct-book.example.com",
 		});
-		expect(direct_to_booking(doctor)).toBe(
-			"https://providers.upmc.com/doc/42",
-		);
+		expect(direct_to_booking(doctor)).toBe("https://providers.upmc.com/doc/42");
 	});
 });
 
@@ -642,9 +643,11 @@ describe("formatMatchedSpecialties", () => {
 	test("splits multiple specialties on semicolons", () => {
 		// input: "Neurology;Cardiology;Oncology"
 		// expected: ["Neurology", "Cardiology", "Oncology"]
-		expect(
-			formatMatchedSpecialties("Neurology;Cardiology;Oncology"),
-		).toEqual(["Neurology", "Cardiology", "Oncology"]);
+		expect(formatMatchedSpecialties("Neurology;Cardiology;Oncology")).toEqual([
+			"Neurology",
+			"Cardiology",
+			"Oncology",
+		]);
 	});
 
 	test("trims whitespace around each specialty name", () => {
@@ -657,9 +660,10 @@ describe("formatMatchedSpecialties", () => {
 
 	test("filters out empty segments from double or trailing semicolons", () => {
 		// input: "Neurology;;Cardiology;"  →  expected: ["Neurology", "Cardiology"]
-		expect(
-			formatMatchedSpecialties("Neurology;;Cardiology;"),
-		).toEqual(["Neurology", "Cardiology"]);
+		expect(formatMatchedSpecialties("Neurology;;Cardiology;")).toEqual([
+			"Neurology",
+			"Cardiology",
+		]);
 	});
 });
 
@@ -703,9 +707,7 @@ describe("buildMatchExplanation", () => {
 	test("trims whitespace from symptoms before including them in the output", () => {
 		// input: symptoms="  headache  "
 		// expected output contains: '"headache"' (trimmed)
-		expect(buildMatchExplanation("  headache  ", null)).toContain(
-			'"headache"',
-		);
+		expect(buildMatchExplanation("  headache  ", null)).toContain('"headache"');
 	});
 
 	test("full output format with specialty", () => {
@@ -1081,13 +1083,11 @@ describe("resolveSymptomsSubmission", () => {
 		const validateSymptomsImpl = vi
 			.fn()
 			.mockResolvedValue({ isDescriptiveEnough: true });
-		const result = await resolveSymptomsSubmission(
-			"  persistent headache  ",
-			{ validateSymptomsImpl },
-		);
+		const result = await resolveSymptomsSubmission("  persistent headache  ", {
+			validateSymptomsImpl,
+		});
 		expect(result.canNavigate).toBe(true);
-		if (result.canNavigate)
-			expect(result.symptoms).toBe("persistent headache");
+		if (result.canNavigate) expect(result.symptoms).toBe("persistent headache");
 	});
 
 	test("resets attempt count and history to zero on a successful validation", async () => {
@@ -1182,9 +1182,9 @@ describe("EmergencyCareAlert", () => {
 
 	test("has aria-live='assertive' so screen readers announce it immediately", () => {
 		render(<EmergencyCareAlert />);
-		expect(
-			screen.getByRole("alert").getAttribute("aria-live"),
-		).toBe("assertive");
+		expect(screen.getByRole("alert").getAttribute("aria-live")).toBe(
+			"assertive",
+		);
 	});
 });
 
@@ -1241,22 +1241,14 @@ describe("SearchPageShell", () => {
 describe("SearchForm", () => {
 	test("renders a textarea with id 'symptoms'", () => {
 		render(
-			<SearchForm
-				symptoms=""
-				onSymptomsChange={vi.fn()}
-				onSubmit={vi.fn()}
-			/>,
+			<SearchForm symptoms="" onSymptomsChange={vi.fn()} onSubmit={vi.fn()} />,
 		);
 		expect(document.getElementById("symptoms")).toBeTruthy();
 	});
 
 	test("renders the submit button with accessible label", () => {
 		render(
-			<SearchForm
-				symptoms=""
-				onSymptomsChange={vi.fn()}
-				onSubmit={vi.fn()}
-			/>,
+			<SearchForm symptoms="" onSymptomsChange={vi.fn()} onSubmit={vi.fn()} />,
 		);
 		expect(
 			screen.getByRole("button", { name: /Find matching doctors/i }),
@@ -1271,9 +1263,9 @@ describe("SearchForm", () => {
 				onSubmit={vi.fn()}
 			/>,
 		);
-		expect(
-			(screen.getByRole("textbox") as HTMLTextAreaElement).value,
-		).toBe("migraine");
+		expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
+			"migraine",
+		);
 	});
 
 	test("calls onSymptomsChange with the new value when the textarea changes", () => {
@@ -1319,15 +1311,9 @@ describe("SearchForm", () => {
 
 	test("does not render the validation message element when message is absent", () => {
 		render(
-			<SearchForm
-				symptoms=""
-				onSymptomsChange={vi.fn()}
-				onSubmit={vi.fn()}
-			/>,
+			<SearchForm symptoms="" onSymptomsChange={vi.fn()} onSubmit={vi.fn()} />,
 		);
-		expect(
-			document.getElementById("symptoms-validation-message"),
-		).toBeNull();
+		expect(document.getElementById("symptoms-validation-message")).toBeNull();
 	});
 
 	test("disables the submit button and shows 'Finding doctors' label when isLoading", () => {
@@ -1354,22 +1340,18 @@ describe("SearchForm", () => {
 				validationMessage="Error!"
 			/>,
 		);
-		expect(
-			screen.getByRole("textbox").getAttribute("aria-describedby"),
-		).toBe("symptoms-validation-message");
+		expect(screen.getByRole("textbox").getAttribute("aria-describedby")).toBe(
+			"symptoms-validation-message",
+		);
 	});
 
 	test("textarea is marked as required", () => {
 		render(
-			<SearchForm
-				symptoms=""
-				onSymptomsChange={vi.fn()}
-				onSubmit={vi.fn()}
-			/>,
+			<SearchForm symptoms="" onSymptomsChange={vi.fn()} onSubmit={vi.fn()} />,
 		);
-		expect(
-			(screen.getByRole("textbox") as HTMLTextAreaElement).required,
-		).toBe(true);
+		expect((screen.getByRole("textbox") as HTMLTextAreaElement).required).toBe(
+			true,
+		);
 	});
 });
 
@@ -1611,9 +1593,7 @@ describe("HomePage", () => {
 		// biome-ignore lint: non-null assertion safe in test context
 		fireEvent.submit(symptomsInput.closest("form")!);
 		await waitFor(() =>
-			expect(
-				screen.getByText(/enter your current symptoms/i),
-			).toBeTruthy(),
+			expect(screen.getByText(/enter your current symptoms/i)).toBeTruthy(),
 		);
 	});
 
@@ -1719,9 +1699,7 @@ describe("FeedbackForm", () => {
 		});
 		// biome-ignore lint: non-null assertion safe in test context
 		fireEvent.submit(
-			screen
-				.getByRole("button", { name: "Submit feedback" })
-				.closest("form")!,
+			screen.getByRole("button", { name: "Submit feedback" }).closest("form")!,
 		);
 		await waitFor(() =>
 			expect(submitFeedbackImpl).toHaveBeenCalledWith(
@@ -1740,9 +1718,7 @@ describe("FeedbackForm", () => {
 		fireEvent.click(screen.getByRole("button", { name: "5 stars" }));
 		// biome-ignore lint: non-null assertion safe in test context
 		fireEvent.submit(
-			screen
-				.getByRole("button", { name: "Submit feedback" })
-				.closest("form")!,
+			screen.getByRole("button", { name: "Submit feedback" }).closest("form")!,
 		);
 		await waitFor(() =>
 			expect(screen.getByText("Thanks for your feedback!")).toBeTruthy(),
@@ -1759,9 +1735,7 @@ describe("FeedbackForm", () => {
 		fireEvent.click(screen.getByRole("button", { name: "2 stars" }));
 		// biome-ignore lint: non-null assertion safe in test context
 		fireEvent.submit(
-			screen
-				.getByRole("button", { name: "Submit feedback" })
-				.closest("form")!,
+			screen.getByRole("button", { name: "Submit feedback" }).closest("form")!,
 		);
 		await waitFor(() =>
 			expect(screen.getByText("Network failure.")).toBeTruthy(),
@@ -1954,9 +1928,7 @@ describe("DoctorRecommendationCard", () => {
 	test("renders matched specialties as list items", () => {
 		render(
 			<DoctorRecommendationCard
-				doctors={[
-					makeDoctor({ matched_specialty: "Neurology;Cardiology" }),
-				]}
+				doctors={[makeDoctor({ matched_specialty: "Neurology;Cardiology" })]}
 				activeDoctorIndex={0}
 				onNextDoctor={vi.fn()}
 				symptoms="headache"
@@ -2107,9 +2079,7 @@ describe("ResultsActiveFilters", () => {
 			/>,
 		);
 		expect(
-			screen.getByText(
-				/Filtered by: Pittsburgh, PA • Accepting new patients/,
-			),
+			screen.getByText(/Filtered by: Pittsburgh, PA • Accepting new patients/),
 		).toBeTruthy();
 	});
 
@@ -2257,18 +2227,14 @@ describe("ResultsHeader", () => {
 	});
 
 	test("hides the back link when includeBackLink is false", () => {
-		render(
-			<ResultsHeader includeBackLink={false} initialSymptoms="cough" />,
-		);
+		render(<ResultsHeader includeBackLink={false} initialSymptoms="cough" />);
 		expect(
 			screen.queryByRole("link", { name: /Start a new search/i }),
 		).toBeNull();
 	});
 
 	test("shows the back link when includeBackLink is true", () => {
-		render(
-			<ResultsHeader includeBackLink={true} initialSymptoms="cough" />,
-		);
+		render(<ResultsHeader includeBackLink={true} initialSymptoms="cough" />);
 		expect(
 			screen.getByRole("link", { name: /Start a new search/i }),
 		).toBeTruthy();
@@ -2294,9 +2260,7 @@ describe("ResultsHeader", () => {
 				activeFilters={{}}
 			/>,
 		);
-		expect(
-			screen.queryByRole("button", { name: /Refine/i }),
-		).toBeNull();
+		expect(screen.queryByRole("button", { name: /Refine/i })).toBeNull();
 	});
 });
 
@@ -2322,9 +2286,7 @@ describe("ResultsSearchSummary", () => {
 
 	test("renders different symptom strings correctly", () => {
 		render(<ResultsSearchSummary symptoms="lower back pain and fatigue" />);
-		expect(
-			screen.getByText("lower back pain and fatigue"),
-		).toBeTruthy();
+		expect(screen.getByText("lower back pain and fatigue")).toBeTruthy();
 	});
 });
 
@@ -2363,9 +2325,7 @@ describe("ResultsPage", () => {
 			/>,
 		);
 		await waitFor(() =>
-			expect(
-				screen.getByRole("heading", { name: "Dr. Results" }),
-			).toBeTruthy(),
+			expect(screen.getByRole("heading", { name: "Dr. Results" })).toBeTruthy(),
 		);
 	});
 
@@ -2373,14 +2333,10 @@ describe("ResultsPage", () => {
 		render(
 			<ResultsPage
 				initialSymptoms="headaches"
-				searchDoctorsImpl={vi
-					.fn()
-					.mockRejectedValue(new Error("API is down."))}
+				searchDoctorsImpl={vi.fn().mockRejectedValue(new Error("API is down."))}
 			/>,
 		);
-		await waitFor(() =>
-			expect(screen.getByText("API is down.")).toBeTruthy(),
-		);
+		await waitFor(() => expect(screen.getByText("API is down.")).toBeTruthy());
 	});
 
 	test("shows 'No doctors matched' message when search returns an empty array", async () => {
@@ -2435,5 +2391,279 @@ describe("ResultsPage", () => {
 				screen.getByRole("heading", { name: "Recommended doctors" }),
 			).toBeTruthy(),
 		);
+	});
+
+	test("renders the sort dropdown with Relevance and Earliest appointment options", async () => {
+		const doctor = makeDoctor({ full_name: "Dr. Sort Test" });
+		render(
+			<ResultsPage
+				initialSymptoms="headaches"
+				searchDoctorsImpl={vi.fn().mockResolvedValue([doctor])}
+			/>,
+		);
+		await waitFor(() =>
+			expect(
+				screen.getByRole("heading", { name: "Dr. Sort Test" }),
+			).toBeTruthy(),
+		);
+		const select = screen.getByRole("combobox", { name: "Sort results" });
+		expect(select).toBeTruthy();
+		expect(
+			select.querySelector?.("option[value='relevance']") ?? select,
+		).toBeTruthy();
+		expect(
+			document.querySelector("option[value='earliest_appointment']"),
+		).toBeTruthy();
+	});
+
+	test("changing sort dropdown to earliest appointment reorders doctors by next_available", async () => {
+		const later = makeDoctor({
+			id: 1,
+			full_name: "Dr. Later",
+			next_available: "2025-06-10T09:00:00Z",
+			match_score: 0.9,
+		});
+		const sooner = makeDoctor({
+			id: 2,
+			full_name: "Dr. Sooner",
+			next_available: "2025-05-01T09:00:00Z",
+			match_score: 0.5,
+		});
+		render(
+			<ResultsPage
+				initialSymptoms="headaches"
+				searchDoctorsImpl={vi.fn().mockResolvedValue([later, sooner])}
+			/>,
+		);
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: "Dr. Later" })).toBeTruthy(),
+		);
+		const select = screen.getByRole("combobox", { name: "Sort results" });
+		fireEvent.change(select, { target: { value: "earliest_appointment" } });
+		// After reorder, Dr. Sooner (earliest) should be shown first.
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: "Dr. Sooner" })).toBeTruthy(),
+		);
+	});
+
+	test("doctor card labels physician with no appointment data appropriately", async () => {
+		const noAppt = makeDoctor({
+			id: 3,
+			full_name: "Dr. No Appt",
+			next_available: null,
+		});
+		render(
+			<ResultsPage
+				initialSymptoms="headaches"
+				searchDoctorsImpl={vi.fn().mockResolvedValue([noAppt])}
+			/>,
+		);
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: "Dr. No Appt" })).toBeTruthy(),
+		);
+		expect(screen.getByText("No appointment data")).toBeTruthy();
+	});
+});
+
+// ===========================================================================
+// sortDoctorsByEarliestAppointment
+// ===========================================================================
+
+describe("sortDoctorsByEarliestAppointment", () => {
+	test("orders doctors ascending by next_available datetime", () => {
+		// input: three doctors with dates in non-ascending order
+		// expected: result is in ascending date order
+		const a = makeDoctor({
+			id: 1,
+			full_name: "Dr. C",
+			next_available: "2025-07-01T08:00:00Z",
+		});
+		const b = makeDoctor({
+			id: 2,
+			full_name: "Dr. A",
+			next_available: "2025-05-01T08:00:00Z",
+		});
+		const c = makeDoctor({
+			id: 3,
+			full_name: "Dr. B",
+			next_available: "2025-06-01T08:00:00Z",
+		});
+		const result = sortDoctorsByEarliestAppointment([a, b, c]);
+		expect(result.map((d) => d.full_name)).toEqual(["Dr. A", "Dr. B", "Dr. C"]);
+	});
+
+	test("places doctors without appointment data at the end", () => {
+		// input: mix of doctors with and without next_available
+		// expected: doctors with dates first, then null/undefined at end
+		const withDate = makeDoctor({
+			id: 1,
+			full_name: "Dr. HasDate",
+			next_available: "2025-06-01T08:00:00Z",
+		});
+		const noDate = makeDoctor({
+			id: 2,
+			full_name: "Dr. NoDate",
+			next_available: null,
+		});
+		const result = sortDoctorsByEarliestAppointment([noDate, withDate]);
+		expect(result[0].full_name).toBe("Dr. HasDate");
+		expect(result[1].full_name).toBe("Dr. NoDate");
+	});
+
+	test("uses match_score descending as secondary sort when two doctors share the same datetime", () => {
+		// input: two doctors with identical next_available, different match scores
+		// expected: higher match_score comes first
+		const sameTime = "2025-06-15T10:00:00Z";
+		const lowScore = makeDoctor({
+			id: 1,
+			full_name: "Dr. LowScore",
+			next_available: sameTime,
+			match_score: 0.3,
+		});
+		const highScore = makeDoctor({
+			id: 2,
+			full_name: "Dr. HighScore",
+			next_available: sameTime,
+			match_score: 0.8,
+		});
+		const result = sortDoctorsByEarliestAppointment([lowScore, highScore]);
+		expect(result[0].full_name).toBe("Dr. HighScore");
+		expect(result[1].full_name).toBe("Dr. LowScore");
+	});
+
+	test("treats a doctor with an invalid date string as having no appointment data", () => {
+		// input: one doctor with a valid date, one with an invalid date string
+		// expected: invalid date is treated like no appointment data and placed last
+		const valid = makeDoctor({
+			id: 1,
+			full_name: "Dr. Valid",
+			next_available: "2025-06-01T08:00:00Z",
+		});
+		const invalid = makeDoctor({
+			id: 2,
+			full_name: "Dr. Invalid",
+			next_available: "not-a-date",
+		});
+		const result = sortDoctorsByEarliestAppointment([invalid, valid]);
+		expect(result[0].full_name).toBe("Dr. Valid");
+		expect(result[1].full_name).toBe("Dr. Invalid");
+	});
+
+	test("returns an empty array when given an empty array", () => {
+		// input: []  →  expected: []
+		expect(sortDoctorsByEarliestAppointment([])).toEqual([]);
+	});
+
+	test("returns the single doctor unchanged", () => {
+		// input: one doctor  →  expected: same doctor in result
+		const doctor = makeDoctor({
+			id: 1,
+			full_name: "Dr. Solo",
+			next_available: "2025-06-01T08:00:00Z",
+		});
+		const result = sortDoctorsByEarliestAppointment([doctor]);
+		expect(result).toHaveLength(1);
+		expect(result[0].full_name).toBe("Dr. Solo");
+	});
+
+	test("places all no-date doctors at the end in their original relative order", () => {
+		// input: multiple no-date doctors
+		// expected: all appear at end, relative order preserved
+		const withDate = makeDoctor({
+			id: 1,
+			full_name: "Dr. HasDate",
+			next_available: "2025-06-01T08:00:00Z",
+		});
+		const noDate1 = makeDoctor({
+			id: 2,
+			full_name: "Dr. NoDate1",
+			next_available: null,
+		});
+		const noDate2 = makeDoctor({
+			id: 3,
+			full_name: "Dr. NoDate2",
+			next_available: undefined,
+		});
+		const result = sortDoctorsByEarliestAppointment([
+			noDate1,
+			withDate,
+			noDate2,
+		]);
+		expect(result[0].full_name).toBe("Dr. HasDate");
+		expect(result.slice(1).map((d) => d.full_name)).toEqual([
+			"Dr. NoDate1",
+			"Dr. NoDate2",
+		]);
+	});
+});
+
+// ===========================================================================
+// formatNextAvailable
+// ===========================================================================
+
+describe("formatNextAvailable", () => {
+	test("returns 'No appointment data' for null", () => {
+		// input: null  →  expected: "No appointment data"
+		expect(formatNextAvailable(null)).toBe("No appointment data");
+	});
+
+	test("returns 'No appointment data' for undefined", () => {
+		// input: undefined  →  expected: "No appointment data"
+		expect(formatNextAvailable(undefined)).toBe("No appointment data");
+	});
+
+	test("returns 'No appointment data' for an empty string", () => {
+		// input: ""  →  expected: "No appointment data"
+		expect(formatNextAvailable("")).toBe("No appointment data");
+	});
+
+	test("returns 'No appointment data' for an invalid date string", () => {
+		// input: "not-a-date"  →  expected: "No appointment data"
+		expect(formatNextAvailable("not-a-date")).toBe("No appointment data");
+	});
+
+	test("returns a human-readable date string for a valid ISO datetime", () => {
+		// input: valid ISO datetime  →  expected: formatted string (non-empty, not the fallback)
+		const result = formatNextAvailable("2025-06-15T10:00:00Z");
+		expect(result).not.toBe("No appointment data");
+		expect(result.length).toBeGreaterThan(0);
+		// Should include year 2025 and the month abbreviation
+		expect(result).toMatch(/2025/);
+	});
+});
+
+// ===========================================================================
+// loadSortOption / saveSortOption
+// ===========================================================================
+
+describe("loadSortOption / saveSortOption", () => {
+	beforeEach(() => {
+		sessionStorage.clear();
+	});
+
+	test("loadSortOption returns 'relevance' when sessionStorage is empty", () => {
+		// input: nothing stored  →  expected: "relevance"
+		expect(loadSortOption()).toBe("relevance");
+	});
+
+	test("loadSortOption returns 'earliest_appointment' after saving that value", () => {
+		// input: saveSortOption("earliest_appointment")
+		// expected: loadSortOption() === "earliest_appointment"
+		saveSortOption("earliest_appointment");
+		expect(loadSortOption()).toBe("earliest_appointment");
+	});
+
+	test("loadSortOption returns 'relevance' after saving 'relevance'", () => {
+		// input: saveSortOption("relevance")
+		// expected: loadSortOption() === "relevance"
+		saveSortOption("relevance");
+		expect(loadSortOption()).toBe("relevance");
+	});
+
+	test("loadSortOption returns 'relevance' after an unrecognized value is stored", () => {
+		// input: arbitrary string stored directly in sessionStorage
+		// expected: loadSortOption() falls back to "relevance"
+		sessionStorage.setItem("docseek-sort-option", "unknown_option");
+		expect(loadSortOption()).toBe("relevance");
 	});
 });
