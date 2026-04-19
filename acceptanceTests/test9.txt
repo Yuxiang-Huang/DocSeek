@@ -1,0 +1,118 @@
+DocSeek — Acceptance test 9 (manual)
+User story: As a patient experiencing potentially life-threatening symptoms, I want to be alerted if my condition requires immediate help, so I know to seek immediate care.
+
+Important safety note
+Use only **pretend** symptom text for this test. Do not use DocSeek for a real emergency—if you or someone else may be in danger, call your local emergency number (for example 911 in the U.S.) or seek emergency care.
+
+What the app does (so you know what to look for)
+DocSeek uses a **keyword check** on what you type (not a medical diagnosis). When a phrase suggests possible emergency care, the app shows a prominent **alert banner** with a warning icon, the title **“Your symptoms may need immediate emergency care,”** text about calling **911** (or your local emergency number) or going to the ER, and a note that DocSeek does not replace emergency services. On the results screen, the app **does not load doctor recommendations** when that check triggers.
+
+---
+
+Local setup — run DocSeek on your machine (not deployed)
+
+DocSeek is not a single hosted website in this repo; you run **Postgres**, the **API** (Bun/Hono), and the **client** (Vite/React) locally. The usual approach is **Docker Compose** from the repository root.
+
+### A. What to install first
+
+1. **Git** — to clone the repository.
+2. **Docker Desktop** (or Docker Engine + Compose v2) — runs Postgres, API, and client containers. Start Docker and wait until it is fully running.
+3. **OpenAI API access** — the home-page **search submit** path calls the API for symptom validation (`/symptoms/validate`), which uses OpenAI. **Part B** of this test needs that path working. **Part A** (typing only) shows the emergency banner entirely in the browser, but most testers should still run the full stack.
+4. **uv** (optional but recommended) — only if you load sample doctors into Postgres for other tests. For **this** test, an **empty** database is fine: the results page skips doctor search when emergency phrases are detected. Install `uv` from https://docs.astral.sh/uv/getting-started/installation/ if you plan to run `repopulate_database.py`.
+
+### B. Get the code
+
+1. Clone the DocSeek repository (or download and unzip it).
+2. In a terminal, **cd** into the **repository root** (folder containing `client/`, `api/`, `data-scripts/`, and `compose.yml`).
+
+### C. Create environment configuration
+
+1. In the **repository root**, create `.env` from the example:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` in a text editor.
+
+3. Set **`OPENAI_API_KEY=`** to your real key. The API **refuses to start** without it (it loads the repo root `.env` from the mounted project in Docker).
+
+4. For **scripts run on your computer** (not inside Docker), keep **`DATABASE_URL`** like `.env.example`:
+
+   `postgresql://docseek:docseek@localhost:55432/docseek_upmc`
+
+   Compose publishes Postgres on host port **55432**. The API container uses its own `DATABASE_URL` pointing at the `postgres` service—you do not need to edit that for Compose.
+
+5. Keep **`CORS_ALLOWED_ORIGINS`** including `http://localhost:5173` and `http://127.0.0.1:5173`.
+
+6. Save `.env`.
+
+### D. Start Postgres, API, and client
+
+1. From the **repository root**:
+
+   ```bash
+   docker compose up
+   ```
+
+   Use `docker compose -f compose.yml up` if your setup requires an explicit file.
+
+2. First launch may take a while (image pull, `bun install` in `api` and `client`).
+
+3. When healthy, the **client** is at **http://localhost:5173** and the **API** at **http://localhost:3000** (defaults from `compose.yml`).
+
+4. **Collation / old volume issues:** if Postgres warns about collation, reset once per root `README.md`:
+
+   ```bash
+   docker compose down -v
+   rm -rf data-scripts/.docker-postgres
+   docker compose up
+   ```
+
+### E. Load doctor data (optional for this test)
+
+You **do not** need doctor rows in the database to see the **emergency alert on the results page**—the app detects emergency phrases before it runs a doctor search.
+
+If you want the rest of the app (normal recommendations) to work for other tests, from a **host** terminal:
+
+```bash
+cd data-scripts
+uv run python repopulate_database.py
+```
+
+This uses `DATABASE_URL` and `OPENAI_API_KEY` from the repo root `.env` (via the script’s `load_root_env()`).
+
+### F. Verify before you test
+
+1. Open **http://localhost:5173** — home page should load (“How can we help you today?”).
+2. For **Part B**, try a normal symptom flow once if you like: if validation errors appear, confirm the API container logs and `.env` `OPENAI_API_KEY`.
+
+---
+
+Prerequisites specific to this test
+
+1. **Desktop or mobile browser** with JavaScript enabled.
+2. **Full stack running** for **Part B** (submit navigates to results only after API validation succeeds).
+
+---
+
+Part A — Alert on the home page
+1. Open DocSeek and go to the home screen (“How can we help you today?”).
+2. Click in the main symptom box.
+3. Type a short phrase that includes an emergency keyword the app watches for—for example **chest pain** (other examples include **stroke**, **can’t breathe**, **severe bleeding**—see `client/src/components/App.tsx` constant `EMERGENCY_PHRASES` or client tests if you need more).
+4. Confirm a highlighted alert **below** the search area appears (not just small validation text). It should include **911** and emergency room language.
+5. Read the alert once: you should understand you should call emergency services or go to the ER, not rely on DocSeek alone.
+
+Part B — Same concern on the results page (if you reach it)
+1. With the emergency phrase still in the box, press the **round arrow** button to run the search (accessibility: “Find matching doctors”). Wait for validation if the API is thinking.
+2. If the app navigates to **Recommended doctors**, confirm the **same style of emergency alert** appears and that **no doctor recommendation cards** load (no normal ranked list for this symptom).
+3. Use **Start a new search** (or go home) when finished.
+
+Expected result
+For simulated emergency-type wording, you see a clear **immediate-care** warning on the home page while typing, and on the results route (when you get there) with **911 / ER** guidance, and DocSeek does not present ordinary doctor matching as the main path for that case.
+
+---
+
+Optional: run without Docker (advanced)
+
+If Postgres is on **localhost:55432** with the same DB/user as `.env.example`, install **Bun**, run `bun install` and `bun run dev` in `api/` and `client/`, and set **`VITE_API_BASE_URL=http://localhost:3000`** for the client. You must still provide **`OPENAI_API_KEY`** in the repo root `.env`. Prefer Docker Compose unless you already use a native workflow.

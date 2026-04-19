@@ -1,0 +1,279 @@
+User Story: As a patient who is living somewhere new, I want to view the distance the
+physician is from me, so I can understand their locations relative to me and choose a
+convenient option.
+
+======================================================================================
+PREREQUISITES: System Setup
+======================================================================================
+
+Complete ALL of the following before beginning the test steps.
+
+--- 1. REQUIRED TOOLS ---
+
+Ensure the following are installed on your machine:
+  - Bun (JavaScript runtime): https://bun.sh
+  - Docker and Docker Compose (recommended) OR PostgreSQL 16+ with pgvector extension
+  - An OpenAI API key with access to the text-embedding-3-small and gpt-4o-mini models
+
+--- 2. ENVIRONMENT CONFIGURATION ---
+
+a. In the root of the DocSeek repository, create a file named ".env" (if it does not
+   already exist). You can copy the provided example:
+
+     cp .env.example .env
+
+b. Open .env in a text editor and fill in the required values:
+
+     DATABASE_URL=postgresql://docseek:docseek@localhost:55432/docseek_upmc
+     CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+     OPENAI_API_KEY=<your OpenAI API key here>
+     OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+     OPENAI_BASE_URL=https://api.openai.com/v1
+     OPENAI_CHAT_MODEL=gpt-4o-mini
+
+   IMPORTANT: The OPENAI_API_KEY must be valid and have sufficient quota. Without it,
+   search and symptom validation will not function.
+
+--- 3. START THE APPLICATION ---
+
+OPTION A — Docker Compose (recommended, starts everything automatically):
+
+  From the repository root, run:
+
+    docker compose up
+
+  This starts:
+    - PostgreSQL 16 database with pgvector on port 55432
+    - The backend API on http://localhost:3000
+    - The frontend client on http://localhost:5173
+
+  Wait until you see log output from both the API and client services indicating
+  they are ready before proceeding.
+
+OPTION B — Manual start (if not using Docker):
+
+  1. Start a PostgreSQL 16+ instance with the pgvector extension enabled,
+     accessible at the DATABASE_URL configured in your .env file.
+
+  2. Start the backend API:
+       cd api
+       bun install
+       bun run dev
+     The API will be available at http://localhost:3000.
+
+  3. In a separate terminal, start the frontend:
+       cd client
+       bun install
+       bun --bun run dev
+     The frontend will be available at http://localhost:5173.
+
+--- 4. LOAD PHYSICIAN DATA INTO THE DATABASE ---
+
+The database must be populated with UPMC physician records before searches will
+return results. Run the following from the repository root:
+
+  cd data-scripts
+  uv run python repopulate_database.py
+
+  NOTE: This script requires Python 3.12+ and the "uv" package manager.
+  It reads from the pre-scraped "data-scripts/upmc_doctors.json" file and uses
+  your OPENAI_API_KEY to generate vector embeddings for each physician's specialty.
+  This step may take several minutes depending on the number of records.
+
+--- 5. VERIFY THE APPLICATION IS READY ---
+
+Open http://localhost:5173 in your web browser. You should see the DocSeek home page
+with the heading "How can we help you today?" and a symptom input text area.
+If the page does not load or shows an error, check the terminal output for both the
+API and client processes before continuing.
+
+--- 6. BROWSER LOCATION PERMISSION SETUP ---
+
+This user story requires that your browser can share your current location with the
+application. Prepare your browser before running the test:
+
+  a. In Google Chrome or Microsoft Edge:
+       - Click the lock icon in the address bar when on http://localhost:5173.
+       - Select "Site settings."
+       - Under "Location," choose "Allow."
+
+  b. In Firefox:
+       - Click the lock icon in the address bar when on http://localhost:5173.
+       - Click "Connection secure" > "More information" > "Permissions."
+       - Under "Access Your Location," select "Allow."
+
+  c. In Safari:
+       - Go to Safari > Settings > Websites > Location.
+       - Find localhost and set it to "Allow."
+
+  If you cannot or do not wish to grant location permission, refer to the
+  "EDGE CASES TO VERIFY" section at the bottom of this document for fallback
+  behavior to validate instead.
+
+======================================================================================
+TEST INSTRUCTIONS: Viewing Physician Distance from Current Location
+======================================================================================
+
+PART 1: Navigate to the Application
+-------------------------------------
+1. Open your web browser and go to: http://localhost:5173
+2. Confirm the DocSeek home page is visible with the heading
+   "How can we help you today?" and a text area for describing your symptoms.
+
+PART 2: Grant Browser Location Access
+---------------------------------------
+3. As soon as the page loads, your browser may display a permission prompt asking
+   whether DocSeek can access your location (exact wording varies by browser).
+   Click "Allow" or "Allow while visiting site."
+
+   NOTE: If no prompt appears, location permission may already be granted (proceed)
+   or already denied (see EDGE CASES section at the bottom of this document).
+
+PART 3: Enter Your Symptoms
+----------------------------
+4. Click inside the symptom input text area (placeholder text: "I have chest pains").
+5. Type a clear, descriptive description of your medical issue or symptoms.
+
+   GOOD examples:
+     "I have been experiencing persistent headaches and blurred vision for a week."
+     "I have sharp knee pain when climbing stairs that has worsened over two months."
+     "I have recurring stomach pain after meals and occasional nausea."
+
+   BAD examples (too vague — the system will reject and ask for more detail):
+     "I feel sick."
+     "Pain."
+     "I don't feel well."
+
+   NOTE: If your description is not specific enough, a feedback message will appear
+   below the text area asking you to be more descriptive. You have up to 3 attempts
+   to refine your description before the system proceeds automatically.
+
+   NOTE ON EMERGENCIES: If your symptoms describe a life-threatening emergency
+   (e.g., chest pain, difficulty breathing, stroke symptoms), the system will
+   display an emergency alert and will NOT proceed with a search. Follow the
+   on-screen instructions and contact emergency services in that case.
+
+PART 4: (Optional) Apply a Location Filter
+-------------------------------------------
+6. To test distance display focused on a specific geographic area, fill in the
+   Location filter:
+     - Click the "Location" text input (hint text: "Show doctors near this area").
+     - Type a city, state, or ZIP code (e.g., "Pittsburgh, PA" or "15213").
+     - Leave blank to see results from all locations.
+
+   IMPORTANT: The location filter narrows which physicians appear in results, but
+   distances are always calculated from YOUR current device location — not from the
+   filter city.
+
+PART 5: Submit Your Search
+---------------------------
+7. Click the right-arrow (→) submit button to the right of the symptom input field.
+8. Wait a few seconds while the system validates your symptoms and searches for
+   matching physicians.
+   - If the system asks you to refine your symptoms, update the text area with more
+     specific detail and click submit again (up to 3 times).
+
+PART 6: Locate the Distance Label on a Physician Card
+------------------------------------------------------
+9. You will be taken to the Results page. A physician recommendation card will be
+   displayed.
+
+10. On the physician card, locate the LOCATION & DISTANCE field. It appears as a
+    single line of text in the format:
+
+       <Practice Location Name> · <X.X mi away>
+
+    Examples:
+       "UPMC Shadyside · 3.2 mi away"
+       "UPMC Mercy · 10+ mi away"
+
+    The distance value reflects how far the physician's primary practice location
+    is from your current browser/device location.
+
+11. Verify the following properties of the distance label:
+
+    a. PRESENCE: A distance value is shown alongside the physician's location name,
+       separated by a middle dot (·).
+
+    b. FORMAT: The distance is expressed in miles using one of the following forms:
+         - A decimal value rounded to one place, e.g., "3.2 mi away"
+         - A capped label for large distances, e.g., "10+ mi away"
+
+    c. PLAUSIBILITY: If you know your approximate location and the physician's city,
+       confirm the displayed distance is geographically reasonable. For example, if
+       you are in Pittsburgh, PA and the physician is listed in Pittsburgh, PA, the
+       distance should be a few miles — not hundreds.
+
+PART 7: Compare Distances Across Multiple Physicians
+----------------------------------------------------
+12. Click "See the next recommended doctor" at the bottom of the physician card to
+    advance to the next recommendation.
+
+13. On each subsequent physician card, observe the LOCATION & DISTANCE field.
+
+14. Verify that:
+    a. Each physician card independently displays its own distance from your location.
+    b. Physicians located closer to you show a smaller distance value than those
+       located farther away.
+    c. Distance values vary across physicians who practice at different locations.
+
+15. Repeat steps 12–14 for at least 3 different physician cards to confirm consistent
+    distance display across results.
+
+PART 8: (Optional) Verify Distance on Saved Physicians
+-------------------------------------------------------
+16. On any physician card, click the bookmark icon ("Save for later") to save that
+    physician.
+17. Click "Saved physicians" in the top navigation bar.
+18. On the Saved Physicians page, locate the LOCATION & DISTANCE field on the saved
+    physician's card.
+19. Verify the same distance value shown during the search is also visible on the
+    saved physician card.
+
+PART 9: (Optional) Refine by Location and Re-check Distance
+------------------------------------------------------------
+20. Return to the Results page. Click "Refine filters" near the top of the page.
+21. Change the location filter to a different city (e.g., switch from "Pittsburgh, PA"
+    to "Monroeville, PA") and apply the filter.
+22. On the updated results, confirm:
+    - The physician cards now show doctors in the new area.
+    - Distances are still calculated from YOUR current browser location, not from
+      the filter location.
+    - Distance values reflect the actual geographic relationship between you and each
+      newly listed physician.
+
+======================================================================================
+EXPECTED OUTCOMES
+======================================================================================
+
+- Every physician recommendation card on the Results page displays a distance label
+  in the format "<Location Name> · <X.X mi away>" or "<Location Name> · 10+ mi away."
+- Distance values are calculated from the user's actual device/browser location
+  (obtained via the browser Geolocation API) to the physician's recorded practice
+  coordinates.
+- Distances vary across physician cards and are geographically plausible given the
+  user's location and the physician's listed city.
+- The distance label updates correctly when navigating between physician cards using
+  "See the next recommended doctor."
+- Saved physicians also display their distance on the Saved Physicians page.
+
+======================================================================================
+EDGE CASES TO VERIFY
+======================================================================================
+
+- Location permission DENIED: If the user does not grant browser location access,
+  the distance label should still appear using a fallback distance value. The
+  application should not crash, show a blank distance field, or display an error
+  message in place of the distance.
+
+- Physician has no coordinates: If a physician record lacks latitude/longitude data,
+  only the location name should appear with no distance label. The card should not
+  display an error or broken text.
+
+- Very large distance: If the physician is far from the user (e.g., the user is
+  located outside of Pittsburgh), the label should display "10+ mi away" rather
+  than a very large exact number.
+
+- No results returned: If the symptom/location combination returns no physicians,
+  the Results page should display an empty-state message. No distance-related
+  errors should appear.

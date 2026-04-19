@@ -1,0 +1,184 @@
+# Section 3 — Stage Issue Orchestration
+#
+# Trigger: a team member applies the "copilot" label to a user-story issue.
+#
+# This workflow creates three GitHub sub-issues for the story:
+#   - implementation: labeled "copilot-implementation"
+#   - tests:          labeled "copilot-tests"
+#   - dev spec:       labeled "copilot-dev-spec"
+#
+# The implementation issue is assigned to the Copilot coding agent immediately.
+# Workflows 02 and 04 assign Copilot to the tests and dev-spec issues after the
+# previous stage PR is merged.
+
+name: "S3 · Create Copilot Stage Issues"
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  create-stage-issues:
+    if: github.event_name == 'issues' && github.event.label.name == 'copilot'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure stage labels exist
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh label create "copilot-implementation" --repo "${REPO}" --color "0E8A16" --description "Copilot implementation stage" --force
+          gh label create "copilot-tests" --repo "${REPO}" --color "1D76DB" --description "Copilot tests stage" --force
+          gh label create "copilot-dev-spec" --repo "${REPO}" --color "5319E7" --description "Copilot dev-spec stage" --force
+
+      - name: Create or reuse stage issues
+        id: stages
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          REPO: ${{ github.repository }}
+          PARENT_ISSUE: ${{ github.event.issue.number }}
+          PARENT_TITLE: ${{ github.event.issue.title }}
+          PARENT_BODY: ${{ github.event.issue.body }}
+        run: |
+          printf '%s' "${PARENT_BODY}" > "${RUNNER_TEMP}/parent-body.md"
+
+          find_stage_issue() {
+            local stage="$1"
+            local label="$2"
+            gh issue list \
+              --repo "${REPO}" \
+              --state all \
+              --label "${label}" \
+              --search "\"docseek-parent-story: ${PARENT_ISSUE}\" \"docseek-stage: ${stage}\"" \
+              --json number \
+              --jq '.[0].number // empty'
+          }
+
+          create_stage_issue() {
+            local stage="$1"
+            local label="$2"
+            local title="$3"
+            local body_file="${RUNNER_TEMP}/${stage}-initial.md"
+
+            cat > "${body_file}" << BODY
+          <!-- docseek-stage: ${stage} -->
+          <!-- docseek-parent-story: ${PARENT_ISSUE} -->
+
+          This stage issue is being initialized by workflow 01.
+          BODY
+
+            gh issue create \
+              --repo "${REPO}" \
+              --title "${title}: ${PARENT_TITLE}" \
+              --label "${label}" \
+              --body-file "${body_file}" \
+              | grep -oE '[0-9]+$'
+          }
+
+          ensure_stage_issue() {
+            local stage="$1"
+            local label="$2"
+            local title="$3"
+            local existing
+
+            existing=$(find_stage_issue "${stage}" "${label}")
+            if [ -n "${existing}" ]; then
+              echo "${existing}"
+            else
+              create_stage_issue "${stage}" "${label}" "${title}"
+            fi
+          }
+
+          IMPLEMENTATION_ISSUE=$(ensure_stage_issue "implementation" "copilot-implementation" "Implementation")
+          TESTS_ISSUE=$(ensure_stage_issue "tests" "copilot-tests" "Tests")
+          DEV_SPEC_ISSUE=$(ensure_stage_issue "dev-spec" "copilot-dev-spec" "Dev spec")
+
+          for stage in implementation tests dev-spec; do
+            case "${stage}" in
+              implementation) issue="${IMPLEMENTATION_ISSUE}" ;;
+              tests) issue="${TESTS_ISSUE}" ;;
+              dev-spec) issue="${DEV_SPEC_ISSUE}" ;;
+            esac
+
+            node .github/scripts/stage-issue-policy.js body \
+              --stage "${stage}" \
+              --parent-number "${PARENT_ISSUE}" \
+              --parent-title "${PARENT_TITLE}" \
+              --parent-body-file "${RUNNER_TEMP}/parent-body.md" \
+              --implementation-issue "${IMPLEMENTATION_ISSUE}" \
+              --tests-issue "${TESTS_ISSUE}" \
+              --dev-spec-issue "${DEV_SPEC_ISSUE}" \
+              --output-file "${RUNNER_TEMP}/${stage}-body.md"
+
+            gh issue edit "${issue}" \
+              --repo "${REPO}" \
+              --body-file "${RUNNER_TEMP}/${stage}-body.md"
+          done
+
+          add_subissue() {
+            local issue_number="$1"
+            local sub_issue_id
+
+            if gh api \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${REPO}/issues/${PARENT_ISSUE}/sub_issues" \
+              --jq '.[].number' \
+              | grep -qx "${issue_number}"; then
+              echo "Issue #${issue_number} is already a sub-issue of #${PARENT_ISSUE}"
+              return
+            fi
+
+            sub_issue_id=$(gh api "repos/${REPO}/issues/${issue_number}" --jq '.id')
+
+            gh api \
+              -X POST \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${REPO}/issues/${PARENT_ISSUE}/sub_issues" \
+              -F sub_issue_id="${sub_issue_id}" \
+              -F replace_parent=true \
+              >/dev/null
+          }
+
+          add_subissue "${IMPLEMENTATION_ISSUE}"
+          add_subissue "${TESTS_ISSUE}"
+          add_subissue "${DEV_SPEC_ISSUE}"
+
+          echo "implementation_issue=${IMPLEMENTATION_ISSUE}" >> "${GITHUB_OUTPUT}"
+          echo "tests_issue=${TESTS_ISSUE}" >> "${GITHUB_OUTPUT}"
+          echo "dev_spec_issue=${DEV_SPEC_ISSUE}" >> "${GITHUB_OUTPUT}"
+          echo "Created stage issues: implementation #${IMPLEMENTATION_ISSUE}, tests #${TESTS_ISSUE}, dev spec #${DEV_SPEC_ISSUE}"
+
+      - name: Assign Copilot to implementation issue
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PARENT_ISSUE: ${{ github.event.issue.number }}
+          IMPLEMENTATION_ISSUE: ${{ steps.stages.outputs.implementation_issue }}
+        run: |
+          BRANCH_NAME="feat/issue-${IMPLEMENTATION_ISSUE}-implementation"
+
+          cat > "${RUNNER_TEMP}/implementation-instructions.txt" << INSTRUCTIONS
+          You are implementing the DocSeek user story described in issue #${IMPLEMENTATION_ISSUE}.
+          That issue is a stage sub-issue and includes the full original user story content from parent issue #${PARENT_ISSUE}.
+
+          Rules:
+          1. Implement only the original user story acceptance criteria.
+          2. Do not create or modify test files.
+          3. Do not create or modify docs/.
+          4. Match existing code conventions.
+          5. Use branch ${BRANCH_NAME}.
+          6. Open the PR against main.
+          7. PR title format: feat: summary (closes #${IMPLEMENTATION_ISSUE})
+          8. PR body first line: Closes #${IMPLEMENTATION_ISSUE}
+          9. Include a Related to #${PARENT_ISSUE} line in the PR body.
+          INSTRUCTIONS
+
+          bash .github/scripts/assign-copilot-agent.sh "${IMPLEMENTATION_ISSUE}" "${RUNNER_TEMP}/implementation-instructions.txt"

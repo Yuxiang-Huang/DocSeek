@@ -5,11 +5,16 @@ import {
 	ArrowRight,
 	Bookmark,
 	BookmarkCheck,
+	Check,
+	EyeOff,
 	Filter,
+	Link2,
 	Search,
 	Stethoscope,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { useBlockedPhysicians } from "../hooks/useBlockedPhysicians";
+import { useCopyPhysicianLink } from "../hooks/useCopyPhysicianLink";
 import { useSavedPhysicians } from "../hooks/useSavedPhysicians";
 import { calculateDistance, formatDistance } from "../utils/distance";
 import { AppNav } from "./AppNav";
@@ -36,6 +41,7 @@ export type Doctor = {
 	matched_specialty: string | null;
 	latitude: number | null;
 	longitude: number | null;
+	next_available?: string | null;
 };
 
 type UserLocation = {
@@ -122,6 +128,7 @@ type DoctorRecommendationCardProps = {
 	isSaved?: boolean;
 	onSave?: () => void;
 	onUnsave?: () => void;
+	onBlock?: () => void;
 	userLocation: UserLocation | null;
 };
 
@@ -164,6 +171,36 @@ export function getDoctorSearchUrl(apiBaseUrl = API_BASE_URL) {
 
 export function getSymptomValidationUrl(apiBaseUrl = API_BASE_URL) {
 	return `${apiBaseUrl}/symptoms/validate`;
+}
+
+export function getPhysicianProfileUrl(
+	doctorId: number,
+	origin = typeof window !== "undefined" ? window.location.origin : "",
+) {
+	return `${origin}/physician/${doctorId}`;
+}
+
+export function getDoctorUrl(doctorId: number, apiBaseUrl = API_BASE_URL) {
+	return `${apiBaseUrl}/doctors/${doctorId}`;
+}
+
+export async function fetchDoctor(
+	doctorId: number,
+	{ apiBaseUrl = API_BASE_URL, fetchImpl = fetch }: SearchDoctorsOptions = {},
+): Promise<Doctor | null> {
+	const response = await fetchImpl(getDoctorUrl(doctorId, apiBaseUrl));
+
+	if (response.status === 404) {
+		return null;
+	}
+
+	if (!response.ok) {
+		const payload = (await response.json()) as { error?: string };
+		throw new Error(payload.error ?? "Unable to load physician profile.");
+	}
+
+	const payload = (await response.json()) as { doctor?: Doctor };
+	return payload.doctor ?? null;
 }
 
 export function normalizeSymptoms(symptoms: string) {
@@ -332,6 +369,65 @@ export function formatMatchedSpecialties(matched: string | null): string[] {
 		.split(";")
 		.map((s) => s.trim())
 		.filter(Boolean);
+}
+
+export type SortOption = "relevance" | "earliest_appointment";
+
+const SORT_STORAGE_KEY = "docseek-sort-option";
+
+export function loadSortOption(): SortOption {
+	try {
+		const raw = sessionStorage.getItem(SORT_STORAGE_KEY);
+		if (raw === "earliest_appointment") return "earliest_appointment";
+	} catch {
+		// sessionStorage unavailable
+	}
+	return "relevance";
+}
+
+export function saveSortOption(option: SortOption): void {
+	try {
+		sessionStorage.setItem(SORT_STORAGE_KEY, option);
+	} catch {
+		// sessionStorage unavailable
+	}
+}
+
+export function formatNextAvailable(value: string | null | undefined): string {
+	if (!value) return "No appointment data";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "No appointment data";
+	return date.toLocaleString(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+		timeZoneName: "short",
+	});
+}
+
+export function sortDoctorsByEarliestAppointment(doctors: Doctor[]): Doctor[] {
+	const withDate: Doctor[] = [];
+	const withoutDate: Doctor[] = [];
+	for (const d of doctors) {
+		const t = d.next_available ? new Date(d.next_available).getTime() : NaN;
+		if (!Number.isNaN(t)) {
+			withDate.push(d);
+		} else {
+			withoutDate.push(d);
+		}
+	}
+	withDate.sort((a, b) => {
+		const tA = new Date(a.next_available!).getTime();
+		const tB = new Date(b.next_available!).getTime();
+		if (tA !== tB) return tA - tB;
+		// Secondary sort: by match_score descending (relevance)
+		const sA = a.match_score ?? -1;
+		const sB = b.match_score ?? -1;
+		return sB - sA;
+	});
+	return [...withDate, ...withoutDate];
 }
 
 export function buildMatchExplanation(
@@ -857,10 +953,14 @@ export function DoctorRecommendationCard({
 	isSaved = false,
 	onSave,
 	onUnsave,
+	onBlock,
 	userLocation,
 }: DoctorRecommendationCardProps) {
 	const activeDoctor = doctors[activeDoctorIndex];
 	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
+	const { copyStatus, handleCopyLink } = useCopyPhysicianLink(
+		activeDoctor?.id ?? 0,
+	);
 
 	if (!activeDoctor) {
 		return null;
@@ -921,6 +1021,17 @@ export function DoctorRecommendationCard({
 							)}
 						</button>
 					) : null}
+					{onBlock ? (
+						<button
+							type="button"
+							className="block-button"
+							onClick={onBlock}
+							aria-label={`Do not show ${activeDoctor.full_name} again`}
+						>
+							<EyeOff aria-hidden size={18} strokeWidth={2} />
+							Do not show again
+						</button>
+					) : null}
 					<p
 						className={
 							activeDoctor.accepting_new_patients
@@ -967,6 +1078,16 @@ export function DoctorRecommendationCard({
 				<p className="doctor-detail">
 					{activeDoctor.primary_phone ?? "Phone number not listed"}
 				</p>
+				<p
+					className={
+						activeDoctor.next_available
+							? "doctor-detail next-available"
+							: "doctor-detail next-available next-available-unavailable"
+					}
+				>
+					<span className="next-available-label">Next available: </span>
+					{formatNextAvailable(activeDoctor.next_available)}
+				</p>
 			</div>
 			<FeedbackForm doctorId={activeDoctor.id} />
 			<div className="doctor-links">
@@ -991,6 +1112,24 @@ export function DoctorRecommendationCard({
 					</a>
 				) : null}
 				<button
+					className={`secondary-action copy-link-button${copyStatus === "success" ? " copy-link-success" : ""}`}
+					type="button"
+					onClick={handleCopyLink}
+					aria-label={`Copy link to ${activeDoctor.full_name}'s profile`}
+				>
+					{copyStatus === "success" ? (
+						<>
+							<Check aria-hidden size={18} strokeWidth={2.2} />
+							Link copied!
+						</>
+					) : (
+						<>
+							<Link2 aria-hidden size={18} strokeWidth={2} />
+							Copy link
+						</>
+					)}
+				</button>
+				<button
 					className="secondary-action"
 					type="button"
 					onClick={onNextDoctor}
@@ -999,6 +1138,14 @@ export function DoctorRecommendationCard({
 					{getNextRecommendationLabel(hasNextDoctor)}
 				</button>
 			</div>
+			{copyStatus === "error" ? (
+				<p className="copy-link-error" role="alert">
+					Unable to copy automatically.{" "}
+					<a href={getPhysicianProfileUrl(activeDoctor.id)} rel="noreferrer">
+						Open profile to share link
+					</a>
+				</p>
+			) : null}
 		</section>
 	);
 }
@@ -1157,17 +1304,26 @@ export function ResultsPage({
 }: ResultsPageProps) {
 	const navigate = useNavigate();
 	const savedPhysicians = useSavedPhysicians();
+	const blockedPhysicians = useBlockedPhysicians();
 	const [doctors, setDoctors] = useState<Doctor[]>([]);
 	const [activeDoctorIndex, setActiveDoctorIndex] = useState(0);
 	const [errorMessage, setErrorMessage] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isRefining, setIsRefining] = useState(false);
+	const [sortOption, setSortOption] = useState<SortOption>(() =>
+		loadSortOption(),
+	);
 	const [refineLocation, setRefineLocation] = useState(
 		initialFilters?.location ?? "",
 	);
 	const [refineOnlyAccepting, setRefineOnlyAccepting] = useState(
 		initialFilters?.onlyAcceptingNewPatients ?? false,
 	);
+	const [blockToast, setBlockToast] = useState<{
+		doctorName: string;
+		doctorId: number;
+	} | null>(null);
+	const blockToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		setRefineLocation(initialFilters?.location ?? "");
@@ -1185,6 +1341,55 @@ export function ResultsPage({
 			() => {},
 		);
 	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (blockToastTimerRef.current !== null) {
+				clearTimeout(blockToastTimerRef.current);
+			}
+		};
+	}, []);
+
+	function handleSortChange(option: SortOption) {
+		setSortOption(option);
+		saveSortOption(option);
+		setActiveDoctorIndex(0);
+	}
+
+	const sortedDoctors =
+		sortOption === "earliest_appointment"
+			? sortDoctorsByEarliestAppointment(doctors)
+			: doctors;
+
+	const displayedDoctors = sortedDoctors.filter(
+		(d) => !blockedPhysicians.isBlocked(d.id),
+	);
+
+	function handleBlockDoctor(doctor: Doctor) {
+		blockedPhysicians.blockDoctor(doctor);
+
+		if (blockToastTimerRef.current !== null) {
+			clearTimeout(blockToastTimerRef.current);
+		}
+		setBlockToast({ doctorName: doctor.full_name, doctorId: doctor.id });
+		blockToastTimerRef.current = setTimeout(() => {
+			setBlockToast(null);
+			blockToastTimerRef.current = null;
+		}, 5000);
+
+		setActiveDoctorIndex((currentIndex) =>
+			Math.min(currentIndex, Math.max(0, displayedDoctors.length - 2)),
+		);
+	}
+
+	function handleUndoBlock(doctorId: number) {
+		blockedPhysicians.unblockDoctor(doctorId);
+		if (blockToastTimerRef.current !== null) {
+			clearTimeout(blockToastTimerRef.current);
+			blockToastTimerRef.current = null;
+		}
+		setBlockToast(null);
+	}
 
 	useEffect(() => {
 		let ignore = false;
@@ -1289,6 +1494,22 @@ export function ResultsPage({
 							: "No doctor recommendations are currently displayed."}
 				</div>
 
+				{blockToast ? (
+					<div className="block-toast" role="status" aria-live="polite">
+						<span>
+							<strong>{blockToast.doctorName}</strong> will not appear in your
+							results.
+						</span>
+						<button
+							type="button"
+							className="block-toast-undo"
+							onClick={() => handleUndoBlock(blockToast.doctorId)}
+						>
+							Undo
+						</button>
+					</div>
+				) : null}
+
 				{isLoading ? (
 					<p className="loading-message">Loading recommendations…</p>
 				) : null}
@@ -1299,24 +1520,50 @@ export function ResultsPage({
 					</p>
 				) : null}
 
+				{!isLoading && doctors.length > 0 ? (
+					<div className="results-sort-bar">
+						<label htmlFor="sort-select" className="results-sort-label">
+							Sort:
+						</label>
+						<select
+							id="sort-select"
+							className="results-sort-select"
+							value={sortOption}
+							onChange={(e) =>
+								handleSortChange(e.target.value as SortOption)
+							}
+							aria-label="Sort results"
+						>
+							<option value="relevance">Relevance</option>
+							<option value="earliest_appointment">
+								Earliest appointment
+							</option>
+						</select>
+					</div>
+				) : null}
+
 				{!symptomsSuggestEmergencyCare(initialSymptoms) &&
 				!errorMessage &&
 				!isLoading &&
-				doctors.length > 0 ? (
+				displayedDoctors.length > 0 ? (
 					<DoctorRecommendationCard
-						doctors={doctors}
+						doctors={displayedDoctors}
 						activeDoctorIndex={activeDoctorIndex}
 						symptoms={initialSymptoms}
 						onNextDoctor={() =>
 							setActiveDoctorIndex((currentIndex) => currentIndex + 1)
 						}
-						isSaved={savedPhysicians.isSaved(doctors[activeDoctorIndex]?.id)}
+						isSaved={savedPhysicians.isSaved(displayedDoctors[activeDoctorIndex]?.id)}
 						onSave={() =>
-							doctors[activeDoctorIndex] &&
-							savedPhysicians.addSavedDoctor(doctors[activeDoctorIndex])
+							displayedDoctors[activeDoctorIndex] &&
+							savedPhysicians.addSavedDoctor(displayedDoctors[activeDoctorIndex])
 						}
 						onUnsave={() =>
-							savedPhysicians.removeSavedDoctor(doctors[activeDoctorIndex]?.id)
+							savedPhysicians.removeSavedDoctor(displayedDoctors[activeDoctorIndex]?.id)
+						}
+						onBlock={() =>
+							displayedDoctors[activeDoctorIndex] &&
+							handleBlockDoctor(displayedDoctors[activeDoctorIndex])
 						}
 						userLocation={userLocation}
 					/>

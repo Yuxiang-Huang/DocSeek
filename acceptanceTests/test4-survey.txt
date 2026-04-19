@@ -1,0 +1,56 @@
+Survey: User Story Validation
+"As a cautious patient, I want to understand why a physician was recommended
+so that I can trust the platform's decision."
+
+Reference test: test4.txt
+=============================================================
+
+Please answer all 3 questions after completing the steps in test4.txt.
+
+-------------------------------------------------------------
+QUESTION 1
+-------------------------------------------------------------
+After reading the "Why recommended" section on the physician card, how
+clearly did you understand the reason the physician was suggested to you?
+
+  ( ) 1 - Not at all clear; I could not understand the reasoning
+  ( ) 2 - Slightly clear; I understood some of it but was still confused
+  ( ) 3 - Somewhat clear; the reasoning made partial sense
+  ( ) 4 - Mostly clear; I understood the reasoning with minor uncertainty
+  ( ) 5 - Completely clear; I fully understood why this physician was chosen
+
+-------------------------------------------------------------
+QUESTION 2
+-------------------------------------------------------------
+Did the explanation shown on the physician card increase your confidence
+in the platform's recommendation?
+
+  ( ) Yes — the explanation made me more confident in the recommendation
+  ( ) Somewhat — the explanation helped a little but I still had doubts
+  ( ) No — the explanation did not change or increase my confidence
+
+If you selected "Somewhat" or "No", please briefly describe what was
+missing or unclear:
+
+  ___________________________________________________________________
+  ___________________________________________________________________
+
+-------------------------------------------------------------
+QUESTION 3
+-------------------------------------------------------------
+How well did the matched specialty and explanation reflect the symptoms
+you entered?
+
+  ( ) Very well — the specialty and explanation were clearly relevant
+                  to my described symptoms
+  ( ) Adequately — the connection was reasonable but not immediately obvious
+  ( ) Poorly     — the specialty or explanation seemed unrelated to what
+                   I described
+
+-------------------------------------------------------------
+SURVEYOR NOTES
+-------------------------------------------------------------
+Test completed by : ________________________________
+Date              : ________________________________
+Test environment  : ________________________________  (e.g. local Docker)
+Overall pass/fail : ________________________________

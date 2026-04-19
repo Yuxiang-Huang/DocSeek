@@ -1,0 +1,234 @@
+User Story: As a sick person with no medical knowledge, I want to type my symptoms in
+plain language so that I do not need medical terminology to begin seeking care.
+
+======================================================================================
+PREREQUISITES: System Setup
+======================================================================================
+
+Complete ALL of the following before beginning the test steps.
+
+--- 1. REQUIRED TOOLS ---
+
+Ensure the following are installed on your machine:
+  - Bun (JavaScript runtime): https://bun.sh
+  - Docker and Docker Compose (recommended) OR PostgreSQL 16+ with pgvector extension
+  - An OpenAI API key with access to the text-embedding-3-small and gpt-4o-mini models
+
+--- 2. ENVIRONMENT CONFIGURATION ---
+
+a. In the root of the DocSeek repository, create a file named ".env" (if it does not
+   already exist). You can copy the provided example:
+
+     cp .env.example .env
+
+b. Open .env in a text editor and fill in the required values:
+
+     DATABASE_URL=postgresql://docseek:docseek@localhost:55432/docseek_upmc
+     CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+     OPENAI_API_KEY=<your OpenAI API key here>
+     OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+     OPENAI_BASE_URL=https://api.openai.com/v1
+     OPENAI_CHAT_MODEL=gpt-4o-mini
+
+   IMPORTANT: The OPENAI_API_KEY must be valid and have sufficient quota. Without it,
+   symptom validation and doctor matching will not function.
+
+--- 3. START THE APPLICATION ---
+
+OPTION A — Docker Compose (recommended, starts everything automatically):
+
+  From the repository root, run:
+
+    docker compose up
+
+  This starts:
+    - PostgreSQL 16 database with pgvector on port 55432
+    - The backend API on http://localhost:3000
+    - The frontend client on http://localhost:5173
+
+  Wait until you see log output from both the API and client services indicating
+  they are ready before proceeding.
+
+OPTION B — Manual start (if not using Docker):
+
+  1. Start a PostgreSQL 16+ instance with the pgvector extension enabled,
+     accessible at the DATABASE_URL configured in your .env file.
+
+  2. Start the backend API:
+       cd api
+       bun install
+       bun run dev
+     The API will be available at http://localhost:3000.
+
+  3. In a separate terminal, start the frontend:
+       cd client
+       bun install
+       bun --bun run dev
+     The frontend will be available at http://localhost:5173.
+
+--- 4. LOAD PHYSICIAN DATA INTO THE DATABASE ---
+
+The database must be populated with UPMC physician records and specialty embeddings
+before searches will return results. Run the following from the repository root:
+
+  cd data-scripts
+  uv run python repopulate_database.py
+
+  NOTE: This script requires Python 3.12+ and the "uv" package manager.
+  It reads from the pre-scraped "data-scripts/upmc_doctors.json" file and uses
+  your OPENAI_API_KEY to generate vector embeddings for each physician's specialty.
+  This step may take several minutes depending on the number of records.
+
+--- 5. VERIFY THE APPLICATION IS READY ---
+
+Open http://localhost:5173 in your web browser. You should see the DocSeek home page
+with the heading "How can we help you today?" and a symptom input text area.
+If the page does not load or shows an error, check the terminal output for both the
+API and client processes before continuing.
+
+======================================================================================
+TEST INSTRUCTIONS: Plain-Language Symptom Entry
+======================================================================================
+
+PART 1: Navigate to the Application
+-------------------------------------
+1. Open your web browser and go to: http://localhost:5173
+2. Confirm the DocSeek home page is visible with:
+   - The heading "How can we help you today?"
+   - A large text area for describing your symptoms
+   - Placeholder text reading "I have chest pains" inside the text area
+
+PART 2: Observe the Plain-Language Prompt
+------------------------------------------
+3. Do NOT click anything yet. Read the placeholder text inside the symptom input
+   area ("I have chest pains"). Notice it is written in everyday language — not a
+   medical code or clinical term. This signals that plain language is expected.
+
+4. Look below or near the input area for any suggested symptom chips (e.g.,
+   "Migraines", "MRI scan", "Broken leg"). These chips use common, non-clinical
+   words to reinforce that no medical expertise is required.
+
+PART 3: Enter Symptoms Using Everyday Language (Primary Test)
+--------------------------------------------------------------
+5. Click inside the symptom input text area.
+
+6. Type a description of how you feel using your own words — no medical terminology
+   required. Use the kinds of phrases a patient with no medical background would
+   naturally say.
+
+   GOOD examples of plain-language descriptions:
+     "My knee hurts when I walk up stairs and it has been swollen for two weeks."
+     "I have had a throbbing headache behind my eyes every day this week."
+     "My stomach hurts a lot after I eat and I keep feeling sick to my stomach."
+     "I have been really tired all the time even after sleeping a full night."
+     "The right side of my neck is stiff and sore and I cannot turn my head."
+
+   NOTE: You do NOT need to know the medical names for conditions (e.g., you do not
+   need to type "patellofemoral syndrome" instead of "knee pain when climbing stairs",
+   or "cephalalgia" instead of "headache").
+
+7. After typing your description, read it back to yourself. Confirm it sounds like
+   something you would say to a friend or family member — not a clinical note.
+
+PART 4: (Optional) Use a Suggested Symptom Chip
+-------------------------------------------------
+8. Alternatively, click one of the suggested symptom chips (e.g., "Migraines",
+   "Broken leg", or "MRI scan") displayed on the home page.
+   - The text area should be populated with the chip's plain-language text.
+   - You may edit the text further before submitting.
+
+PART 5: Submit Your Plain-Language Description
+-----------------------------------------------
+9. Click the right-arrow (→) submit button to the right of the symptom input field.
+10. Wait a few seconds while the system processes your plain-language description.
+    - The system sends your text to the backend, which interprets it and maps it to
+      relevant physician specialties — you do not need to specify a specialty yourself.
+
+PART 6: Verify the System Accepts Plain Language
+-------------------------------------------------
+11. Observe one of the following outcomes:
+
+    a. SUCCESS — Results page loads:
+       - You are taken to the Results page.
+       - Your original plain-language description is displayed verbatim at the top
+         of the page (e.g., "My knee hurts when I walk up stairs...").
+       - One or more physician recommendation cards are shown, each with a specialty
+         that the system inferred from your plain-language input.
+       - VERIFY: You were never asked to rephrase using medical terminology.
+
+    b. REFINEMENT PROMPT — System asks for more detail:
+       - A message appears below the text area (e.g., "Add a little more detail
+         about the symptoms you are experiencing.").
+       - This means your description was too vague, NOT that your language was wrong.
+       - Add more detail in plain language (e.g., change "I feel bad" to "I have a
+         sharp pain in my lower back that gets worse when I sit for a long time")
+         and click submit again.
+       - You have up to 3 attempts to add more detail before the system proceeds.
+       - VERIFY: The prompt asks for more detail — it does not ask you to use
+         medical terms or a specific vocabulary.
+
+    c. EMERGENCY ALERT — Symptoms suggest urgent care:
+       - If your description includes phrases like "chest pain", "can't breathe",
+         or other emergency indicators, an alert is displayed instructing you to
+         call 911 or seek immediate care.
+       - In this case, no physician recommendations are shown. This is expected
+         behavior, not a failure of plain-language support.
+       - To continue testing plain-language input, click "Start a new search" and
+         enter a non-emergency description.
+
+PART 7: Review the Matched Results
+------------------------------------
+12. On the Results page, review the physician recommendation card(s).
+    Confirm that:
+    - The specialty shown on each card (e.g., "Orthopedic Surgery", "Neurology")
+      corresponds logically to the symptoms you described in plain language.
+    - The "Why recommended" explanation references your symptoms in plain terms,
+      confirming the system understood your everyday description.
+
+13. Click "See the next recommended doctor" to browse additional matches.
+    - Each subsequent physician should also have a specialty that relates to your
+      plain-language description.
+
+PART 8: (Optional) Run Additional Plain-Language Variations
+------------------------------------------------------------
+14. Click "Start a new search" at the top of the Results page to return to the
+    home page.
+
+15. Repeat steps 5–13 using different everyday descriptions to confirm the
+    system consistently handles plain language. Suggested additional inputs:
+
+    - "I have been getting dizzy and lightheaded when I stand up quickly."
+    - "There is a lump on the side of my neck that has been there for a month."
+    - "My vision gets blurry sometimes and I see flashing lights."
+    - "I have had a rash on my arm for about a week and it is very itchy."
+    - "I keep waking up at night because I cannot breathe through my nose."
+
+======================================================================================
+EXPECTED OUTCOMES
+======================================================================================
+
+- The symptom input accepts free-form everyday language with no requirement to use
+  medical terminology or clinical vocabulary.
+- The system successfully maps plain-language descriptions to relevant physician
+  specialties and returns ranked recommendations.
+- If a description is too vague, the system prompts for more detail using plain
+  language — it never instructs the user to use specific medical terms.
+- The user's original plain-language description is preserved and displayed on the
+  Results page exactly as entered (no translation or modification shown to the user).
+- Physician recommendations shown correspond logically to the symptoms described,
+  demonstrating that the underlying matching understood the plain-language input.
+
+======================================================================================
+EDGE CASES TO VERIFY
+======================================================================================
+
+- Single common word input (e.g., "headache"): The system should accept it or prompt
+  for more detail, but should NOT return an error about improper medical terminology.
+- Informal phrasing (e.g., "my tummy hurts"): The system should treat this the same
+  as "stomach pain" and still return relevant results.
+- Misspelled words (e.g., "my nee hurts"): The system should still attempt to
+  interpret and match the input rather than rejecting it for spelling errors.
+- Very long plain-language description: The system should process it without error
+  and return recommendations based on the most relevant details.
+- Vague input after 3 refinement attempts: The system should proceed automatically
+  to the search rather than blocking the user indefinitely.

@@ -551,6 +551,34 @@ a {
 	background: rgba(12, 22, 52, 0.5);
 }
 
+.results-sort-bar {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	margin-top: 1.25rem;
+}
+
+.results-sort-label {
+	color: var(--text-soft);
+	font-size: 0.9rem;
+	white-space: nowrap;
+}
+
+.results-sort-select {
+	padding: 0.4rem 0.9rem;
+	border-radius: 999px;
+	border: 1px solid rgba(32, 216, 255, 0.2);
+	background: rgba(14, 26, 60, 0.7);
+	color: #a9dfff;
+	font-size: 0.9rem;
+	cursor: pointer;
+}
+
+.results-sort-select:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
+}
+
 .refine-heading {
 	margin: 0 0 1rem;
 	font-size: 1rem;
@@ -884,6 +912,22 @@ a {
 	font-size: 0.95rem;
 }
 
+.next-available-label {
+	color: rgba(147, 193, 229, 0.78);
+	font-size: 0.78rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.next-available {
+	color: #8fffd3;
+}
+
+.next-available-unavailable {
+	color: var(--text-soft);
+	font-style: italic;
+}
+
 .feedback-section {
 	margin-top: 1.75rem;
 	padding-top: 1.5rem;
@@ -995,6 +1039,67 @@ a {
 	opacity: 0.5;
 }
 
+.copy-link-button {
+	gap: 0.5rem;
+}
+
+.copy-link-success {
+	color: #8fffd3;
+	border-color: rgba(21, 96, 78, 0.4) !important;
+	background: rgba(21, 96, 78, 0.24) !important;
+}
+
+.copy-link-error {
+	margin: 0.75rem 0 0;
+	font-size: 0.92rem;
+	color: var(--danger);
+}
+
+.copy-link-error a {
+	color: #a9dfff;
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
+
+.physician-profile-card h1.doctor-card-name {
+	margin: 0.75rem 0 0;
+	font-size: clamp(2.4rem, 4.4vw, 4rem);
+	line-height: 0.98;
+	letter-spacing: -0.04em;
+}
+
+.physician-profile-unavailable {
+	margin-top: 2.5rem;
+	padding: 2.5rem 2rem;
+	border-radius: 2rem;
+	border: 1px solid rgba(94, 123, 199, 0.28);
+	background: linear-gradient(
+		180deg,
+		rgba(13, 22, 47, 0.95),
+		rgba(15, 25, 53, 0.88)
+	);
+	text-align: center;
+}
+
+.physician-profile-unavailable-icon {
+	color: var(--text-muted);
+	margin-bottom: 1rem;
+}
+
+.physician-profile-unavailable-title {
+	margin: 0 0 0.6rem;
+	font-size: clamp(1.6rem, 3vw, 2.4rem);
+	font-weight: 500;
+	color: var(--text-soft);
+}
+
+.physician-profile-unavailable-body {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
 .background-orb {
 	position: absolute;
 	border-radius: 999px;
@@ -1082,6 +1187,85 @@ a {
 	box-shadow:
 		22rem 9rem 0 rgba(112, 136, 255, 0.22),
 		44rem 3rem 0 rgba(79, 141, 255, 0.24);
+}
+
+.block-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.6rem 1rem;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 143, 168, 0.28);
+	background: rgba(66, 18, 40, 0.36);
+	color: #ffd2dc;
+	font-size: 0.92rem;
+	cursor: pointer;
+	transition:
+		transform 180ms ease,
+		border-color 180ms ease,
+		background 180ms ease;
+}
+
+.block-button:hover,
+.block-button:focus-visible {
+	transform: translateY(-1px);
+	border-color: rgba(255, 143, 168, 0.5);
+	background: rgba(80, 22, 50, 0.54);
+}
+
+.block-toast {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-top: 1.25rem;
+	padding: 0.9rem 1.15rem;
+	border: 1px solid rgba(255, 143, 168, 0.26);
+	border-radius: 1rem;
+	background: rgba(66, 18, 40, 0.42);
+	color: #ffd2dc;
+	font-size: 0.95rem;
+}
+
+.block-toast-undo {
+	flex: 0 0 auto;
+	padding: 0.4rem 1rem;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 143, 168, 0.4);
+	background: rgba(80, 22, 50, 0.54);
+	color: #ffd2dc;
+	font-size: 0.88rem;
+	cursor: pointer;
+	transition:
+		border-color 180ms ease,
+		background 180ms ease;
+}
+
+.block-toast-undo:hover,
+.block-toast-undo:focus-visible {
+	border-color: rgba(255, 143, 168, 0.7);
+	background: rgba(100, 28, 62, 0.7);
+}
+
+.blocked-page-badge {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.95rem 1.2rem;
+	border-radius: 1.4rem;
+	border: 1px solid rgba(255, 143, 168, 0.26);
+	background: linear-gradient(
+		180deg,
+		rgba(66, 18, 40, 0.72),
+		rgba(50, 12, 30, 0.82)
+	);
+	color: rgba(255, 143, 168, 0.9);
+	font-size: 1rem;
+}
+
+.app-nav-count-blocked {
+	background: rgba(255, 143, 168, 0.2);
+	color: #ffd2dc;
 }
 
 @media (max-width: 960px) {

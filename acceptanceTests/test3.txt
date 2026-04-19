@@ -1,0 +1,245 @@
+User Story: As a patient who values accuracy, I want the system to recognize when my
+description is unclear so that I can clarify before receiving a recommendation.
+
+======================================================================================
+PREREQUISITES: System Setup
+======================================================================================
+
+Complete ALL of the following before beginning the test steps.
+
+--- 1. REQUIRED TOOLS ---
+
+Ensure the following are installed on your machine:
+  - Bun (JavaScript runtime): https://bun.sh
+  - Docker and Docker Compose (recommended) OR PostgreSQL 16+ with pgvector extension
+  - An OpenAI API key with access to the text-embedding-3-small and gpt-4o-mini models
+
+--- 2. ENVIRONMENT CONFIGURATION ---
+
+a. In the root of the DocSeek repository, create a file named ".env" (if it does not
+   already exist). You can copy the provided example:
+
+     cp .env.example .env
+
+b. Open .env in a text editor and fill in the required values:
+
+     DATABASE_URL=postgresql://docseek:docseek@localhost:55432/docseek_upmc
+     CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+     OPENAI_API_KEY=<your OpenAI API key here>
+     OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+     OPENAI_BASE_URL=https://api.openai.com/v1
+     OPENAI_CHAT_MODEL=gpt-4o-mini
+
+   IMPORTANT: The OPENAI_API_KEY must be valid and have sufficient quota. Without it,
+   symptom validation will not function and the clarification loop cannot be triggered.
+
+--- 3. START THE APPLICATION ---
+
+OPTION A — Docker Compose (recommended, starts everything automatically):
+
+  From the repository root, run:
+
+    docker compose up
+
+  This starts:
+    - PostgreSQL 16 database with pgvector on port 55432
+    - The backend API on http://localhost:3000
+    - The frontend client on http://localhost:5173
+
+  Wait until you see log output from both the API and client services indicating
+  they are ready before proceeding.
+
+OPTION B — Manual start (if not using Docker):
+
+  1. Start a PostgreSQL 16+ instance with the pgvector extension enabled,
+     accessible at the DATABASE_URL configured in your .env file.
+
+  2. Start the backend API:
+       cd api
+       bun install
+       bun run dev
+     The API will be available at http://localhost:3000.
+
+  3. In a separate terminal, start the frontend:
+       cd client
+       bun install
+       bun --bun run dev
+     The frontend will be available at http://localhost:5173.
+
+--- 4. LOAD PHYSICIAN DATA INTO THE DATABASE ---
+
+The database must be populated with UPMC physician records and specialty embeddings
+before the full search flow can complete. Run the following from the repository root:
+
+  cd data-scripts
+  uv run python repopulate_database.py
+
+  NOTE: This script requires Python 3.12+ and the "uv" package manager.
+  It reads from the pre-scraped "data-scripts/upmc_doctors.json" file and uses
+  your OPENAI_API_KEY to generate vector embeddings for each physician's specialty.
+  This step may take several minutes depending on the number of records.
+
+--- 5. VERIFY THE APPLICATION IS READY ---
+
+Open http://localhost:5173 in your web browser. You should see the DocSeek home page
+with the heading "How can we help you today?" and a symptom input text area.
+If the page does not load or shows an error, check the terminal output for both the
+API and client processes before continuing.
+
+======================================================================================
+TEST INSTRUCTIONS: Clarification Prompts for Unclear Symptom Descriptions
+======================================================================================
+
+PART 1: Navigate to the Application
+-------------------------------------
+1. Open your web browser and go to: http://localhost:5173
+2. Confirm the DocSeek home page is visible with:
+   - The heading "How can we help you today?"
+   - A large text area for entering symptoms (placeholder text: "I have chest pains")
+   - A right-arrow (→) submit button to the right of the text area
+
+PART 2: Trigger the First Clarification Prompt (Vague Input)
+-------------------------------------------------------------
+3. Click inside the symptom input text area.
+
+4. Type a vague, non-specific description that does not clearly describe a symptom.
+   Use one of the following examples:
+
+     "I feel sick."
+     "I don't feel well."
+     "Something is wrong."
+     "Pain."
+     "I need a doctor."
+
+   These inputs are intentionally too vague for the system to act on.
+
+5. Click the right-arrow (→) submit button.
+
+6. Wait a moment while the system sends the input to the backend for validation.
+
+7. VERIFY — A clarification message appears below the text area. It should:
+   - Be displayed in a visible error or feedback area beneath the symptom input field.
+   - Ask you to provide more detail about your symptoms (e.g., "Add a little more
+     detail about the symptoms you are experiencing." or a similar guidance message).
+   - NOT navigate away from the home page (you remain on http://localhost:5173).
+   - NOT show any physician recommendations.
+
+   NOTE: The exact wording of the clarification message may vary because it is
+   generated by the AI model based on your specific input. It will always ask for
+   more detail; it will never instruct you to use medical terminology.
+
+PART 3: Refine Your Description (Second Attempt)
+-------------------------------------------------
+8. The text area retains your previous input. Update it with a slightly more
+   descriptive version of your original vague entry. For example:
+
+     If you typed "I feel sick." → update to "I feel sick to my stomach."
+     If you typed "Pain."       → update to "I have pain in my back."
+
+   These are still somewhat vague but slightly more informative than your first try.
+
+9. Click the right-arrow (→) submit button again.
+
+10. VERIFY — One of the following occurs:
+
+    a. A SECOND clarification message appears:
+       - The message below the input updates with new, more specific guidance
+         tailored to your refined input (e.g., "Can you describe where the pain is
+         and how long you've had it?").
+       - You remain on the home page. No recommendations are shown yet.
+       - This confirms the system is tracking your attempt count and adjusting
+         its guidance to help you provide useful information.
+
+    b. The system accepts the input and navigates to the Results page:
+       - This can happen if the model judged your second attempt descriptive enough.
+       - This is also valid behavior. In that case, skip to Part 5.
+
+PART 4: Trigger the Grace-Pass After Three Vague Attempts
+----------------------------------------------------------
+11. If you received a second clarification message in step 10a, update the text area
+    with another vague description. For example:
+
+      "Still not feeling good."
+      "I have pain I guess."
+
+12. Click the right-arrow (→) submit button a third time.
+
+13. VERIFY — The system now navigates to the Results page even though the input
+    remains vague. This is the grace-pass behavior: after 3 clarification attempts
+    the system proceeds automatically rather than blocking the patient indefinitely.
+
+    Confirm:
+    - You are taken to the Results page (URL changes away from http://localhost:5173).
+    - Your most recent symptom text is displayed at the top of the Results page.
+    - Physician recommendation cards are shown (results from the vague query).
+
+PART 5: Verify a Clear Description Is Accepted Immediately
+-----------------------------------------------------------
+14. Click "Start a new search" at the top of the Results page (or navigate back to
+    http://localhost:5173) to return to the home page.
+
+15. Click inside the symptom input text area.
+
+16. Type a specific, descriptive symptom entry. For example:
+
+      "I have had a sharp, throbbing headache behind my eyes every morning for the
+       past five days, and light makes it worse."
+
+      "My left knee has been swollen and painful when I walk up stairs for two weeks."
+
+      "I have recurring sharp stomach pain after meals, accompanied by nausea."
+
+17. Click the right-arrow (→) submit button.
+
+18. VERIFY — The system does NOT display a clarification message. Instead:
+    - It navigates directly to the Results page.
+    - Your symptom description is shown at the top of the Results page.
+    - Physician recommendations are displayed, ranked by relevance to your symptoms.
+
+    This confirms the system only prompts for clarification when genuinely needed,
+    and respects the patient's time when the description is already adequate.
+
+PART 6: Verify the Clarification Counter Resets on a New Search
+---------------------------------------------------------------
+19. Click "Start a new search" to return to the home page.
+
+20. VERIFY — The attempt counter has been reset. Confirm this by:
+    a. Entering a vague description again (e.g., "I feel bad.") and submitting.
+    b. The system prompts for clarification again (attempt 1 of 3), confirming
+       the previous attempt count from PART 4 did not carry over.
+
+======================================================================================
+EXPECTED OUTCOMES
+======================================================================================
+
+- Submitting a vague or non-specific symptom description causes a clarification
+  message to appear below the input field. The system does NOT navigate to results.
+- The clarification message is specific guidance, not a generic error — it tells
+  the patient what kind of detail to add (location, duration, severity, etc.).
+- Each subsequent vague submission (up to 3 total) produces an updated clarification
+  message. The message may grow more specific with each attempt.
+- After 3 failed validation attempts, the system proceeds automatically to the
+  Results page, ensuring patients are never permanently blocked.
+- A sufficiently descriptive first submission bypasses all clarification prompts
+  and navigates directly to the Results page.
+- Navigating away and starting a new search resets the attempt counter to zero.
+
+======================================================================================
+EDGE CASES TO VERIFY
+======================================================================================
+
+- Empty submission: Clicking submit with an empty text area should display the
+  message "Enter your current symptoms to search for matching doctors." and should
+  NOT count toward the 3 clarification attempts.
+- Whitespace-only submission: Submitting only spaces or newlines should behave
+  identically to an empty submission.
+- Vague input followed by a clear refinement: If the patient provides a vague
+  first attempt and then a fully descriptive second attempt, the system should
+  accept the second attempt immediately without waiting for 3 attempts.
+- Emergency symptoms entered on a second attempt: If the patient's refined
+  description contains emergency indicators (e.g., "crushing chest pain, can't
+  breathe"), the system should display an emergency alert instead of a clarification
+  prompt or physician recommendations.
+- Clarification message wording: Confirm the message never instructs the patient
+  to use medical terminology — it only asks for more descriptive detail in plain
+  language.

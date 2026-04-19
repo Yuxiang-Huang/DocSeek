@@ -1,18 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, BookmarkCheck } from "lucide-react";
+import { ArrowLeft, BookmarkCheck, Check, Link2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	type Doctor,
 	direct_to_booking,
+	getPhysicianProfileUrl,
 	SearchPageShell,
 } from "../components/App";
+import { useCopyPhysicianLink } from "../hooks/useCopyPhysicianLink";
 import { useSavedPhysicians } from "../hooks/useSavedPhysicians";
 
 export const Route = createFileRoute("/saved")({
 	component: SavedRoutePage,
 });
 
-function SavedRoutePage() {
+export function SavedRoutePage() {
 	const { savedDoctors, removeSavedDoctor } = useSavedPhysicians();
 	const [activeIndex, setActiveIndex] = useState(0);
 
@@ -77,7 +79,7 @@ type SavedDoctorCardProps = {
 	onUnsave: (doctor: Doctor) => void;
 };
 
-function SavedDoctorCard({
+export function SavedDoctorCard({
 	doctors,
 	activeDoctorIndex,
 	onNextDoctor,
@@ -85,6 +87,9 @@ function SavedDoctorCard({
 }: SavedDoctorCardProps) {
 	const activeDoctor = doctors[activeDoctorIndex];
 	const hasNextDoctor = activeDoctorIndex < doctors.length - 1;
+	const { copyStatus, handleCopyLink } = useCopyPhysicianLink(
+		activeDoctor?.id ?? 0,
+	);
 
 	if (!activeDoctor) return null;
 
@@ -155,6 +160,24 @@ function SavedDoctorCard({
 					</a>
 				) : null}
 				<button
+					className={`secondary-action copy-link-button${copyStatus === "success" ? " copy-link-success" : ""}`}
+					type="button"
+					onClick={handleCopyLink}
+					aria-label={`Copy link to ${activeDoctor.full_name}'s profile`}
+				>
+					{copyStatus === "success" ? (
+						<>
+							<Check aria-hidden size={18} strokeWidth={2.2} />
+							Link copied!
+						</>
+					) : (
+						<>
+							<Link2 aria-hidden size={18} strokeWidth={2} />
+							Copy link
+						</>
+					)}
+				</button>
+				<button
 					className="secondary-action"
 					type="button"
 					onClick={onNextDoctor}
@@ -165,6 +188,14 @@ function SavedDoctorCard({
 						: "You've reached the last saved physician"}
 				</button>
 			</div>
+			{copyStatus === "error" ? (
+				<p className="copy-link-error" role="alert">
+					Unable to copy automatically.{" "}
+					<a href={getPhysicianProfileUrl(activeDoctor.id)} rel="noreferrer">
+						Open profile to share link
+					</a>
+				</p>
+			) : null}
 		</section>
 	);
 }

@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ResultsRouteImport } from './routes/results'
+import { Route as PhysicianIdRouteImport } from './routes/physician.$id'
+import { Route as BlockedRouteImport } from './routes/blocked'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SavedRoute = SavedRouteImport.update({
@@ -23,6 +25,16 @@ const ResultsRoute = ResultsRouteImport.update({
   path: '/results',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PhysicianIdRoute = PhysicianIdRouteImport.update({
+  id: '/physician/$id',
+  path: '/physician/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlockedRoute = BlockedRouteImport.update({
+  id: '/blocked',
+  path: '/blocked',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -33,30 +45,38 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/results': typeof ResultsRoute
   '/saved': typeof SavedRoute
+  '/blocked': typeof BlockedRoute
+  '/physician/$id': typeof PhysicianIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/results': typeof ResultsRoute
   '/saved': typeof SavedRoute
+  '/blocked': typeof BlockedRoute
+  '/physician/$id': typeof PhysicianIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/results': typeof ResultsRoute
   '/saved': typeof SavedRoute
+  '/blocked': typeof BlockedRoute
+  '/physician/$id': typeof PhysicianIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/results' | '/saved'
+  fullPaths: '/' | '/results' | '/saved' | '/blocked' | '/physician/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/results' | '/saved'
-  id: '__root__' | '/' | '/results' | '/saved'
+  to: '/' | '/results' | '/saved' | '/blocked' | '/physician/$id'
+  id: '__root__' | '/' | '/results' | '/saved' | '/blocked' | '/physician/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ResultsRoute: typeof ResultsRoute
   SavedRoute: typeof SavedRoute
+  BlockedRoute: typeof BlockedRoute
+  PhysicianIdRoute: typeof PhysicianIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,6 +95,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/physician/$id': {
+      id: '/physician/$id'
+      path: '/physician/$id'
+      fullPath: '/physician/$id'
+      preLoaderRoute: typeof PhysicianIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blocked': {
+      id: '/blocked'
+      path: '/blocked'
+      fullPath: '/blocked'
+      preLoaderRoute: typeof BlockedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -89,16 +123,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ResultsRoute: ResultsRoute,
   SavedRoute: SavedRoute,
+  BlockedRoute: BlockedRoute,
+  PhysicianIdRoute: PhysicianIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

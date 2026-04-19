@@ -1,0 +1,42 @@
+Survey: User Story Acceptance Feedback
+User Story: As a patient seeking care, I want to be matched with the most relevant UPMC
+physician based on expertise so that I can find the best-qualified doctor for my issue.
+
+Please answer each question after completing the test instructions in test1.txt.
+
+======================================================================================
+
+Q1. Did the physicians returned match the medical expertise relevant to the symptoms
+    you described? (i.e., the specialty shown on each card was appropriate for your
+    described issue)
+
+    [ ] Yes — all or most results were relevant to my symptoms
+    [ ] Partially — some results were relevant, but others seemed unrelated
+    [ ] No — the results did not reflect my described symptoms
+
+    Comments: ________________________________________________________________
+
+--------------------------------------------------------------------------------------
+
+Q2. Was the ordering of results useful — did the highest-ranked physician feel like
+    the best match for your issue compared to those listed later?
+
+    [ ] Yes — the ranking clearly reflected decreasing relevance
+    [ ] Somewhat — the top result was good but the ordering was not always clear
+    [ ] No — the ranking did not feel meaningful
+
+    Comments: ________________________________________________________________
+
+--------------------------------------------------------------------------------------
+
+Q3. Did the information provided for each physician (specialty, match badge, "why
+    recommended" explanation) give you enough confidence to decide whether this
+    doctor is right for your issue?
+
+    [ ] Yes — I had enough information to make an informed choice
+    [ ] Partially — I needed more detail before I could decide
+    [ ] No — the information was insufficient
+
+    Comments: ________________________________________________________________
+
+======================================================================================

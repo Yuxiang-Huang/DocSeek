@@ -1,0 +1,31 @@
+DocSeek — Test 6 feedback survey (3 questions)
+Context: This survey checks whether the “filter by location and availability” experience delivers enough value that someone would pay for the product. Questions are phrased to invite honest specifics (per *The Mom Test*: past behavior and concrete stories beat flattering hypotheticals). Metrics below map to *The Lean Startup* ideas (validated learning, actionable metrics) and common product metrics (outcome, effort, confidence).
+
+---
+
+Three salient metrics (what we are trying to learn)
+
+1) Outcome success — “Did the user get a shortlist they could act on?”
+   - Why it matters: In *The Lean Startup*, the goal is to learn whether the feature changes real behavior toward a desired outcome (finding a plausible doctor), not vanity counts. This maps to a conversion-style outcome: from “I have constraints” to “I see at least one viable option (or a clear empty state I understand).”
+   - High satisfaction signal: Users describe finishing the flow with a candidate they would call or book, or they explain why the empty state was fair.
+
+2) Fit to stated constraints — “Did location and availability filtering feel faithful?”
+   - Why it matters: *The Mom Test* warns against opinions about your idea; you want evidence the product respected what they asked for. This is a quality-of-match metric: irrelevant results destroy willingness to pay even if the UI is pretty.
+   - High satisfaction signal: Users say results matched their area and availability needs, or they name the specific mismatch (e.g., wrong city) without sarcasm.
+
+3) Time and mental effort — “Was this faster or calmer than their usual approach?”
+   - Why it matters: Lecture-style engagement metrics often pair frequency with “job to be done” completion. Willingness to pay correlates with reduced search cost (fewer tabs, less guesswork). This is a leading indicator of retention and referral in a crowded market.
+   - High satisfaction signal: They compare DocSeek to phone trees, insurance directories, or generic search and say this saved steps or reduced anxiety.
+
+---
+
+Survey (answer in a few sentences each)
+
+Question 1 — Concrete comparison (Mom Test–style, avoids “recommend to a friend”)
+Think about the last time you looked for a new doctor (any tool: insurance site, Google, phone). What was the most annoying part of that process? After using DocSeek with location and availability filters, would you still have needed to open your usual backup tools, or was this enough to move forward? What would have made you abandon this flow?
+
+Question 2 — Constraint fit without asking “did you like our filters?”
+When you set your location and (if you used it) the accepting-new-patients option, did the doctors you were shown feel like they belonged in the situation you described, or did something feel off? Name one example (either a good match or a mismatch) without worrying about hurting anyone’s feelings.
+
+Question 3 — Value and payment intent without a cheesy NPS scale
+If this were a paid subscription next to free insurance find-a-doctor tools, what would have to be true about the location and availability filtering for you to justify paying out of pocket—if anything? (e.g., accuracy, fewer dead ends, saving time.) If you would not pay, say what would need to change first.

@@ -1,0 +1,237 @@
+User Story: As a cautious patient, I want to understand why a physician was recommended so that I can trust the platform's decision.
+
+=============================================================
+ACCEPTANCE TEST: Physician Recommendation Explanation
+=============================================================
+
+PREREQUISITES: SYSTEM SETUP
+=============================================================
+
+The following steps must be completed before beginning the test.
+No account or login is required — the application is fully public.
+
+-------------------------------------------------------------
+PRE-1: Required Software
+-------------------------------------------------------------
+Ensure the following are installed on the test machine:
+
+  a. Docker Desktop (includes Docker Compose)
+     - Required to run the database, API, and client as containers.
+     - Verify with: docker --version && docker compose version
+
+  b. Bun (JavaScript runtime) — only needed for local non-Docker runs
+     - Verify with: bun --version
+     - (If running via Docker only, Bun is not needed on the host.)
+
+  c. A modern web browser (Chrome, Firefox, Safari, or Edge)
+
+-------------------------------------------------------------
+PRE-2: Clone the Repository
+-------------------------------------------------------------
+  If not already cloned, obtain the DocSeek source code:
+
+    git clone <repository-url>
+    cd DocSeek
+
+-------------------------------------------------------------
+PRE-3: Create the Environment File
+-------------------------------------------------------------
+  The application requires a root-level .env file with credentials
+  and configuration values. A template is provided:
+
+  1. From the repo root, copy the example file:
+
+       cp .env.example .env
+
+  2. Open .env in a text editor.
+
+  3. Set the required values:
+
+       OPENAI_API_KEY=<your-openai-api-key>
+
+     All other values in .env.example have sensible local defaults
+     and do not need to be changed for local testing:
+
+       DATABASE_URL=postgresql://docseek:docseek@localhost:55432/docseek_upmc
+       CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+       OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+       OPENAI_BASE_URL=https://api.openai.com/v1
+       OPENAI_CHAT_MODEL=gpt-4o-mini
+
+  NOTE: The API will fail to start if OPENAI_API_KEY is missing or blank.
+  An active OpenAI API key with access to text-embedding-3-small and
+  gpt-4o-mini is required for symptom validation and physician matching.
+
+-------------------------------------------------------------
+PRE-4: Start All Services via Docker Compose
+-------------------------------------------------------------
+  From the repo root, start Postgres, the API, and the client together:
+
+    docker compose up
+
+  This will:
+    - Start a PostgreSQL container (with pgvector extension enabled)
+    - Start the API server on http://localhost:3000
+    - Start the frontend client on http://localhost:5173
+
+  Wait until you see log output indicating all three services are running.
+  The first run may take a few minutes to pull images and initialise.
+
+  TROUBLESHOOTING — Collation version mismatch warning:
+  If you previously ran DocSeek with an older database volume, you may
+  see a collation mismatch warning. Reset the database once with:
+
+    docker compose down -v
+    rm -rf data-scripts/.docker-postgres
+    docker compose up
+
+-------------------------------------------------------------
+PRE-5: Populate the Database
+-------------------------------------------------------------
+  A checked-in dataset (upmc_doctors.json) is used for testing.
+  Do NOT re-scrape the UPMC site. Instead, run the repopulate script
+  to load the physician data and generate specialty embeddings:
+
+    cd data-scripts
+    uv run python repopulate_database.py
+
+  This script:
+    - Loads physician records into PostgreSQL
+    - Generates and stores pgvector specialty embeddings (used for matching)
+
+  NOTE: uv (Python package manager) must be available on the host.
+  Install it with: pip install uv  (or see https://github.com/astral-sh/uv)
+
+  The script contacts the OpenAI API to generate embeddings, so ensure
+  OPENAI_API_KEY is set in .env before running.
+
+-------------------------------------------------------------
+PRE-6: Verify Services Are Healthy
+-------------------------------------------------------------
+  Confirm the following endpoints respond before starting the test:
+
+    Frontend : http://localhost:5173   → Should show the DocSeek home page
+    API      : http://localhost:3000   → Should return a response (e.g. 200 OK)
+    Postgres : localhost:55432         → Reachable by the API container (internal)
+
+  Open http://localhost:5173 in your browser. If the home page loads with
+  a symptom search field visible, the system is ready for testing.
+
+-------------------------------------------------------------
+PRE-7: No Login Required
+-------------------------------------------------------------
+  DocSeek has no authentication layer. No account creation, login,
+  or session setup is needed. Any user can begin a search immediately
+  upon reaching the home page.
+
+=============================================================
+TEST STEPS
+=============================================================
+
+-------------------------------------------------------------
+STEP 1: Open the Application
+-------------------------------------------------------------
+1. Open your web browser.
+2. Navigate to the DocSeek home page (e.g., http://localhost:5173 if running locally).
+3. Confirm that the home page loads and you see a symptom search input field.
+
+-------------------------------------------------------------
+STEP 2: Enter a Descriptive Symptom Description
+-------------------------------------------------------------
+1. Click on the symptom search input field.
+2. Type a clear, descriptive symptom description. Example:
+       "I have been experiencing sharp chest pains and shortness of breath."
+   NOTE: Vague entries (e.g., "I feel bad") will trigger a guidance message
+   asking you to be more specific. Provide sufficient detail to proceed.
+3. Optionally, fill in the location filter (e.g., "Pittsburgh, PA") and/or
+   toggle "Only show physicians accepting new patients" if desired.
+4. Click the Search (or Submit) button.
+
+-------------------------------------------------------------
+STEP 3: Symptom Validation
+-------------------------------------------------------------
+1. The system will briefly validate your symptom description.
+   - If the description is too vague, a message will appear asking you to
+     add more detail. Revise your input and click Search again (up to 3
+     attempts are allowed).
+   - If the description is descriptive enough, the app will automatically
+     proceed to the results page.
+
+-------------------------------------------------------------
+STEP 4: View the Results Page
+-------------------------------------------------------------
+1. After validation passes, you will be navigated to the results page
+   (URL will resemble: /results?symptoms=...).
+2. Confirm that at least one physician recommendation card is displayed.
+
+-------------------------------------------------------------
+STEP 5: Locate the "Why Recommended" Section
+-------------------------------------------------------------
+1. On the physician recommendation card, look for a section labeled
+   "Why recommended" (or similar heading).
+2. Confirm the following elements are visible within that section:
+
+   a. MATCH QUALITY BADGE
+      - A colored badge indicating the strength of the match.
+      - Possible values:
+          * "Strong match"   — displayed when match score >= 0.55
+          * "Good match"     — displayed when match score >= 0.40
+          * "Possible match" — displayed for lower scores
+      - The badge should be visually distinct (different color per level).
+
+   b. MATCH EXPLANATION TEXT
+      - A sentence explaining the connection between your symptoms and the
+        physician's expertise. Example:
+            "Your symptoms were matched to this physician's expertise in
+             Cardiology. You described: 'sharp chest pains and shortness
+             of breath.'"
+      - Confirm that the explanation references:
+          * The physician's matched specialty
+          * Your original symptom description (or a summary of it)
+
+   c. MATCHED SPECIALTIES LIST
+      - One or more specialty pill/badge labels showing the specific
+        medical specialties associated with the recommendation.
+      - Example pills: "Cardiology", "Internal Medicine"
+
+-------------------------------------------------------------
+STEP 6: Verify Explanation Accuracy and Trustworthiness
+-------------------------------------------------------------
+1. Read the explanation text and confirm it is coherent and relevant to
+   the symptoms you entered.
+2. Confirm the matched specialty makes logical sense given your described
+   symptoms (e.g., chest pains → Cardiology, not Dermatology).
+3. Confirm the explanation echoes back your original symptom wording or
+   a recognizable paraphrase of it.
+
+-------------------------------------------------------------
+STEP 7: Browse Additional Recommendations (Optional)
+-------------------------------------------------------------
+1. If a "Next" button or navigation control is available, click it to
+   view the next recommended physician.
+2. Confirm that each physician card also displays its own "Why recommended"
+   section with a distinct explanation tailored to that physician.
+
+-------------------------------------------------------------
+EXPECTED RESULTS (Pass Criteria):
+-------------------------------------------------------------
+[ ] The results page loads and displays at least one physician card.
+[ ] Each physician card includes a "Why recommended" section.
+[ ] A match quality badge ("Strong match", "Good match", or "Possible match")
+    is visible on the card.
+[ ] An explanation sentence is present that references both the physician's
+    specialty and the user's symptom description.
+[ ] Matched specialty pills/badges are displayed.
+[ ] The explanation is coherent and logically consistent with the entered
+    symptoms.
+[ ] Different physicians (if multiple results) show distinct explanations.
+
+-------------------------------------------------------------
+FAILURE CONDITIONS (Fail Criteria):
+-------------------------------------------------------------
+[ ] No physician recommendation cards are displayed after a valid search.
+[ ] The "Why recommended" section is absent or empty.
+[ ] The match quality badge is missing or shows an unrecognized value.
+[ ] The explanation text does not reference the user's symptoms or the
+    physician's specialty.
+[ ] The matched specialty is clearly unrelated to the entered symptoms.

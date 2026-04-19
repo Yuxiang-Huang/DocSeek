@@ -1,0 +1,198 @@
+# Section 6 — Start Development Specification Stage
+#
+# Trigger: a Copilot tests PR is merged to main.
+#
+# This workflow assigns Copilot to the pre-created dev-spec sub-issue for the
+# original user story. The dev-spec sub-issue contains the original user story
+# content copied from the parent issue.
+
+name: "S6 · Assign Copilot to Dev Spec Issue"
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  issues: write
+  pull-requests: read
+  contents: read
+
+jobs:
+  assign-dev-spec:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tests stage issue
+        id: tests
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.repository }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ "${PR_MERGED}" != "true" ]; then
+            echo "advance=false" >> "${GITHUB_OUTPUT}"
+            echo "PR #${PR_NUMBER} was closed without merge; skipping."
+            exit 0
+          fi
+
+          case "${PR_AUTHOR}" in
+            Copilot|github-copilot[bot]) ;;
+            *)
+              echo "advance=false" >> "${GITHUB_OUTPUT}"
+              echo "PR #${PR_NUMBER} was authored by '${PR_AUTHOR}', not Copilot; skipping."
+              exit 0
+              ;;
+          esac
+
+          TESTS_ISSUE=$(gh api graphql \
+            -F owner="${OWNER}" \
+            -F repo="${REPO_NAME}" \
+            -f query='
+              query($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                  issues(first: 100, labels: ["copilot-tests"], states: [OPEN, CLOSED]) {
+                    nodes {
+                      number
+                      timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT]) {
+                        nodes {
+                          ... on CrossReferencedEvent {
+                            source {
+                              __typename
+                              ... on PullRequest { number }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }' \
+            --jq "first(.data.repository.issues.nodes[]
+              | select(any(.timelineItems.nodes[]; .source.__typename == \"PullRequest\" and .source.number == ${PR_NUMBER}))
+              | .number) // empty")
+
+          if [ -z "${TESTS_ISSUE}" ]; then
+            echo "ERROR: no issue labeled 'copilot-tests' has a timeline reference from PR #${PR_NUMBER}."
+            exit 1
+          fi
+
+          PARENT_ISSUE=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${REPO}/issues/${TESTS_ISSUE}/parent" \
+            --jq '.number')
+
+          if [ -z "${PARENT_ISSUE}" ]; then
+            echo "ERROR: tests issue #${TESTS_ISSUE} has no parent user story."
+            exit 1
+          fi
+
+          DEV_SPEC_ISSUE=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${REPO}/issues/${PARENT_ISSUE}/sub_issues?per_page=100" \
+            --jq 'first(.[] | select([.labels[].name] | index("copilot-dev-spec")) | .number) // empty')
+
+          if [ -z "${DEV_SPEC_ISSUE}" ]; then
+            echo "ERROR: parent issue #${PARENT_ISSUE} has no sub-issue labeled 'copilot-dev-spec'."
+            exit 1
+          fi
+
+          echo "advance=true" >> "${GITHUB_OUTPUT}"
+          echo "parent_story=${PARENT_ISSUE}" >> "${GITHUB_OUTPUT}"
+          echo "tests_issue=${TESTS_ISSUE}" >> "${GITHUB_OUTPUT}"
+          echo "dev_spec_issue=${DEV_SPEC_ISSUE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Gather merged test PR diff
+        if: steps.tests.outputs.advance == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr diff "${PR_NUMBER}" --repo "${REPO}" | head -c 10000 > "${RUNNER_TEMP}/tests.diff"
+          echo "Diff size: $(wc -c < "${RUNNER_TEMP}/tests.diff") bytes"
+
+      - name: Assign Copilot to dev-spec issue
+        if: steps.tests.outputs.advance == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PARENT_ISSUE: ${{ steps.tests.outputs.parent_story }}
+          TESTS_ISSUE: ${{ steps.tests.outputs.tests_issue }}
+          DEV_SPEC_ISSUE: ${{ steps.tests.outputs.dev_spec_issue }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "${DEV_SPEC_ISSUE}" ]; then
+            echo "ERROR: tests issue #${TESTS_ISSUE} does not reference a dev-spec stage issue."
+            exit 1
+          fi
+
+          BRANCH_NAME="docs/issue-${DEV_SPEC_ISSUE}-dev-spec"
+          SPEC_FILE="docs/user-story-${PARENT_ISSUE}-dev-spec.md"
+
+          cat > "${RUNNER_TEMP}/dev-spec-instructions.txt" << INSTRUCTIONS
+          You are writing a development specification for DocSeek, a UPMC physician-matching web application.
+          That issue is a stage sub-issue and includes the full original user story content from parent issue #${PARENT_ISSUE}.
+          The tests PR #${PR_NUMBER} has been merged.
+
+          DocSeek stack:
+          - Frontend: React 19 + Vite + TypeScript (client/src/), TanStack Router, TanStack Query, Tailwind CSS v4
+          - Backend: Bun + Hono REST API (api/src/)
+          - Database: PostgreSQL + pgvector for physician vector similarity search
+          - AI: OpenAI text-embedding-3-small (embeddings), GPT-4o (re-ranking, symptom validation)
+          - Frontend tests: Vitest in client/src/tests/
+          - Backend tests: Bun test in api/src/*.test.ts
+
+          Existing dev specs in docs/ show the exact format to follow (e.g. docs/user-story-1-dev-spec.md).
+
+          Write or update ${SPEC_FILE}.
+
+          If an existing spec already exists at ${SPEC_FILE}, UPDATE it to reflect the new changes.
+          Preserve all sections that are still accurate. Update:
+          - The Merge date section with today's date
+          - Architecture and flow diagrams if data flow changed
+          - Implementation reference tables for new/changed types and functions
+          - Technologies table if new packages were added
+          - Database schema if tables changed
+          - Failure modes if new ones apply
+
+          If ${SPEC_FILE} does not exist, write a NEW development specification file at ${SPEC_FILE}.
+
+          The specification MUST include all these sections in order:
+          1. Title: # User Story ${PARENT_ISSUE} — Development Specification
+          2. User story (As a... I want... so that...)
+          3. Related issue (GitHub link)
+          4. Story ownership table (Primary/Secondary owner with GitHub usernames — use TBD if unknown)
+          5. Merge date on main (today's date + one-sentence summary)
+          6. Architecture diagram (Mermaid flowchart TB: Browser / API / Database / OpenAI subgraphs)
+          7. Information flow diagram (Mermaid flowchart LR + Data elements table)
+          8. Class diagram (Mermaid classDiagram — all new types, interfaces, components)
+          9. Implementation reference (public/private tables per module, same format as user-story-1-dev-spec.md)
+          10. Technologies table (NEW dependencies only: Technology | Version | Purpose | Why chosen | Docs)
+          11. Database schema (new/modified tables, or 'No schema changes in this story.')
+          12. Failure-mode effects (user-visible and internally visible per failure mode)
+          13. PII section (new user data collected? If not, state that explicitly)
+          14. Summary paragraph
+
+          Use the identical markdown table format and heading structure as docs/user-story-1-dev-spec.md.
+
+          Git and PR rules:
+          1. Use branch ${BRANCH_NAME}.
+          2. Open the PR against main.
+          3. PR title format: docs: update dev spec for story #${PARENT_ISSUE} (closes #${DEV_SPEC_ISSUE})
+          4. PR body first line: Closes #${DEV_SPEC_ISSUE}
+          5. Include Related to #${PARENT_ISSUE} and Triggered by tests PR #${PR_NUMBER} lines.
+          6. Write the file to ${SPEC_FILE} now.
+
+          Tests diff excerpt:
+          $(cat "${RUNNER_TEMP}/tests.diff")
+          INSTRUCTIONS
+
+          bash .github/scripts/assign-copilot-agent.sh "${DEV_SPEC_ISSUE}" "${RUNNER_TEMP}/dev-spec-instructions.txt"

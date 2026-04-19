@@ -1,0 +1,48 @@
+Survey: User Story Acceptance Feedback
+User Story: As a patient who values accuracy, I want the system to recognize when my
+description is unclear so that I can clarify before receiving a recommendation.
+
+Please answer each question after completing the acceptance test steps in test3.txt.
+
+======================================================================================
+
+Q1. When you submitted a vague symptom description, did the system prompt you to
+    provide more detail BEFORE showing any physician recommendations?
+
+    [ ] Yes — a clarification message appeared and no recommendations were shown
+    [ ] Partially — a message appeared but recommendations were shown at the same time
+    [ ] No — the system proceeded to recommendations without asking for more detail
+    [ ] I was unable to trigger this behavior
+
+    Comments: ___________________________________________________________________
+
+--------------------------------------------------------------------------------------
+
+Q2. Was the clarification message helpful enough for you to understand what
+    additional information to provide?
+
+    [ ] Yes — the message clearly explained what detail was missing
+    [ ] Somewhat — the message was present but too generic to act on
+    [ ] No — the message did not help me understand how to improve my description
+    [ ] No clarification message was shown
+
+    Comments: ___________________________________________________________________
+
+--------------------------------------------------------------------------------------
+
+Q3. After providing a sufficiently detailed description, did the system accept it
+    and proceed to recommendations without asking for further clarification?
+
+    [ ] Yes — a clear description was accepted immediately
+    [ ] No — the system prompted for clarification even when my description was detailed
+    [ ] I did not test this scenario
+
+    Comments: ___________________________________________________________________
+
+======================================================================================
+
+Overall, do you believe the user story has been achieved?
+
+    [ ] Yes    [ ] No    [ ] Partially
+
+Additional comments: ________________________________________________________________

@@ -1,0 +1,127 @@
+DocSeek — Acceptance test 7 (manual)
+User story: As a patient who has completed an appointment, I want to provide feedback on my experience so that I can help improve future physician recommendations.
+
+How this maps to the app
+In DocSeek, visit feedback is collected on the doctor recommendation screen. The section is labeled **Rate your visit** and appears on the card for the doctor you are viewing. In real life you would use it after seeing that provider; for this test you use the same controls to confirm the feature works end to end. Submissions are sent to the API (`POST /doctors/:id/feedback`) and stored in the database **`feedback`** table when the stack is configured correctly.
+
+---
+
+Local setup — run DocSeek on your machine (not deployed)
+
+This test needs the **client**, the **API**, **Postgres** with the full schema (including **`feedback`**), **OpenAI** (symptom validation and search), and **doctor rows** so a recommendation card appears.
+
+### A. What to install first
+
+1. **Git** — to clone the repository.
+2. **Docker Desktop** (or Docker Engine with Compose v2) — runs Postgres (pgvector), the Bun API, and the Vite dev client. Start Docker and wait until it is running.
+3. **OpenAI API access** — required for `/symptoms/validate` and doctor search embeddings. Set a real **`OPENAI_API_KEY`** in `.env`.
+4. **uv** — documented way to load sample data. Install from https://docs.astral.sh/uv/getting-started/installation/
+
+### B. Get the code
+
+1. Clone the DocSeek repository (or download and unzip it).
+2. In a terminal, **cd** into the **repository root** (folder containing `client/`, `api/`, `data-scripts/`, and `compose.yml`).
+
+### C. Create environment configuration
+
+1. In the **repository root**, copy the example env file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` in a text editor.
+
+3. Set **`OPENAI_API_KEY=`** to your actual key. The API **exits at startup** if this is missing; it loads the repo root `.env` when the project is mounted in Docker.
+
+4. For **commands you run on your host** (e.g. repopulate), keep **`DATABASE_URL`** as in `.env.example`, typically:
+
+   `postgresql://docseek:docseek@localhost:55432/docseek_upmc`
+
+   That matches Postgres exposed on **localhost:55432** by Compose. Inside Docker, the API uses its own `DATABASE_URL` targeting the `postgres` service—you do not need to change that for Compose.
+
+5. Keep **`CORS_ALLOWED_ORIGINS`** including `http://localhost:5173` and `http://127.0.0.1:5173`.
+
+6. Save `.env`.
+
+### D. Start Postgres, API, and client
+
+1. From the **repository root**:
+
+   ```bash
+   docker compose up
+   ```
+
+   Or, if required:
+
+   ```bash
+   docker compose -f compose.yml up
+   ```
+
+2. First run may take several minutes (images, `bun install` in `api` and `client`).
+
+3. When healthy:
+
+   - **Client:** http://localhost:5173  
+   - **API:** http://localhost:3000  
+
+4. Postgres is initialized with scripts under `data-scripts/postgres/init` (including schema that creates **`feedback`**). If you previously hit a **collation** warning with an old volume, reset once per root `README.md`:
+
+   ```bash
+   docker compose down -v
+   rm -rf data-scripts/.docker-postgres
+   docker compose up
+   ```
+
+### E. Load doctor data (required for this test)
+
+You must have at least one doctor in the database so **Recommended doctors** shows a card with **Rate your visit**.
+
+1. On your **host**, in a second terminal (Compose still running):
+
+   ```bash
+   cd data-scripts
+   uv run python repopulate_database.py
+   ```
+
+2. Wait until it finishes without errors (loads `upmc_doctors.json`, refreshes embeddings; uses OpenAI over the network).
+
+### F. Verify before you run the test
+
+1. Open **http://localhost:5173** — home page (“How can we help you today?”).
+2. Run a symptom search and confirm you see a doctor card after **Loading recommendations…**
+3. If **Submit feedback** later returns a **500** or “feedback service” error, check API logs and that Postgres initialized **`feedback`** (fresh `compose up` after `-v` if you suspect a broken schema).
+
+---
+
+What you will need for the test itself
+
+- A few minutes.
+- Optional: a short sentence in **Optional comment…** (you can submit with stars only).
+
+---
+
+Detailed steps — provide feedback after “your visit”
+1. Open **http://localhost:5173**. You should see “How can we help you today?” and the main symptom text area.
+2. Type a health concern that is **not** an emergency keyword (avoid phrases like **chest pain** that trigger the emergency banner—use something routine such as **Ongoing knee pain when walking up stairs**). If the app asks for more detail, add a sentence and submit again until you can proceed.
+3. Submit with the **round arrow** button on the home search bar (accessibility label: **Find matching doctors**). Wait until you leave the home page.
+4. You should land on **Recommended doctors**. Wait until **Loading recommendations…** disappears and a doctor card appears (if “no doctors matched,” fix data or symptoms and repeat from step 2).
+5. At the top of the card, note the doctor’s name and **Recommendation X of Y**—this is the doctor your feedback will be associated with.
+6. Scroll to **Rate your visit** (above the star row and optional comment box).
+7. Click one star rating (**1**–**5**). Selected stars should look active.
+8. (Optional) Enter text in the box with placeholder **Optional comment…**
+9. Click **Submit feedback.**
+10. Confirm you see **Thanks for your feedback!** If not, read any error line under the form and check the browser Network tab / API logs.
+11. Optional extra checks:
+    a) With **no** stars selected, **Submit feedback** should stay **disabled** (`rating === 0` in the client).
+    b) If there is another recommendation, click **See the next recommended doctor**, scroll to **Rate your visit** again, and submit once more to confirm feedback is tied to the **current** doctor.
+12. Use **Start a new search** or close the tab when finished.
+
+Expected result
+You can reach a doctor card after a successful search, use **Rate your visit** to choose 1–5 stars, optionally add a comment, submit successfully, and see **Thanks for your feedback!** — with the API able to persist rows in **`feedback`** when the database is set up correctly.
+
+---
+
+Optional: run without Docker (advanced)
+
+With Postgres on **localhost:55432** matching `.env.example`, install **Bun**, run `bun install` and `bun run dev` in `api/` and `client/`, set **`VITE_API_BASE_URL=http://localhost:3000`**, and keep **`OPENAI_API_KEY`** in the repo root `.env`. Prefer Docker Compose unless you already use a native workflow.

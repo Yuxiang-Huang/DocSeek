@@ -1,0 +1,160 @@
+# Section 4 — Start Test Generation Stage
+#
+# Trigger: a Copilot implementation PR is merged to main.
+#
+# This workflow does not generate tests directly. It assigns Copilot to the
+# pre-created tests sub-issue for the original user story. The tests sub-issue
+# contains the original user story content copied from the parent issue.
+
+name: "S4 · Assign Copilot to Tests Issue"
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  issues: write
+  pull-requests: read
+  contents: read
+
+jobs:
+  assign-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve implementation stage issue
+        id: implementation
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.repository }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ "${PR_MERGED}" != "true" ]; then
+            echo "advance=false" >> "${GITHUB_OUTPUT}"
+            echo "PR #${PR_NUMBER} was closed without merge; skipping."
+            exit 0
+          fi
+
+          case "${PR_AUTHOR}" in
+            Copilot|github-copilot[bot]) ;;
+            *)
+              echo "advance=false" >> "${GITHUB_OUTPUT}"
+              echo "PR #${PR_NUMBER} was authored by '${PR_AUTHOR}', not Copilot; skipping."
+              exit 0
+              ;;
+          esac
+
+          IMPLEMENTATION_ISSUE=$(gh api graphql \
+            -F owner="${OWNER}" \
+            -F repo="${REPO_NAME}" \
+            -f query='
+              query($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                  issues(first: 100, labels: ["copilot-implementation"], states: [OPEN, CLOSED]) {
+                    nodes {
+                      number
+                      timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT]) {
+                        nodes {
+                          ... on CrossReferencedEvent {
+                            source {
+                              __typename
+                              ... on PullRequest { number }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }' \
+            --jq "first(.data.repository.issues.nodes[]
+              | select(any(.timelineItems.nodes[]; .source.__typename == \"PullRequest\" and .source.number == ${PR_NUMBER}))
+              | .number) // empty")
+
+          if [ -z "${IMPLEMENTATION_ISSUE}" ]; then
+            echo "ERROR: no issue labeled 'copilot-implementation' has a timeline reference from PR #${PR_NUMBER}."
+            exit 1
+          fi
+
+          PARENT_ISSUE=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${REPO}/issues/${IMPLEMENTATION_ISSUE}/parent" \
+            --jq '.number')
+
+          if [ -z "${PARENT_ISSUE}" ]; then
+            echo "ERROR: implementation issue #${IMPLEMENTATION_ISSUE} has no parent user story."
+            exit 1
+          fi
+
+          TESTS_ISSUE=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${REPO}/issues/${PARENT_ISSUE}/sub_issues?per_page=100" \
+            --jq 'first(.[] | select([.labels[].name] | index("copilot-tests")) | .number) // empty')
+
+          if [ -z "${TESTS_ISSUE}" ]; then
+            echo "ERROR: parent issue #${PARENT_ISSUE} has no sub-issue labeled 'copilot-tests'."
+            exit 1
+          fi
+
+          echo "advance=true" >> "${GITHUB_OUTPUT}"
+          echo "parent_story=${PARENT_ISSUE}" >> "${GITHUB_OUTPUT}"
+          echo "implementation_issue=${IMPLEMENTATION_ISSUE}" >> "${GITHUB_OUTPUT}"
+          echo "tests_issue=${TESTS_ISSUE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Gather implementation PR diff
+        if: steps.implementation.outputs.advance == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr diff "${PR_NUMBER}" --repo "${REPO}" | head -c 10000 > "${RUNNER_TEMP}/implementation.diff"
+          echo "Diff size: $(wc -c < "${RUNNER_TEMP}/implementation.diff") bytes"
+
+      - name: Assign Copilot to tests issue
+        if: steps.implementation.outputs.advance == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PARENT_ISSUE: ${{ steps.implementation.outputs.parent_story }}
+          IMPLEMENTATION_ISSUE: ${{ steps.implementation.outputs.implementation_issue }}
+          TESTS_ISSUE: ${{ steps.implementation.outputs.tests_issue }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "${TESTS_ISSUE}" ]; then
+            echo "ERROR: implementation issue #${IMPLEMENTATION_ISSUE} does not reference a tests stage issue."
+            exit 1
+          fi
+
+          BRANCH_NAME="test/issue-${TESTS_ISSUE}-tests"
+
+          cat > "${RUNNER_TEMP}/tests-instructions.txt" << INSTRUCTIONS
+          You are writing automated tests for DocSeek in issue #${TESTS_ISSUE}.
+          That issue is a stage sub-issue and includes the full original user story content from parent issue #${PARENT_ISSUE}.
+          The implementation PR #${PR_NUMBER} has been merged.
+
+          Rules:
+          1. Write tests that cover the original user story acceptance criteria and the merged implementation.
+          2. Frontend tests go in client/src/tests/ and run with cd client && npm test.
+          3. Backend tests go in api/src/*.test.ts and run with cd api && bun test.
+          4. Mock OpenAI calls, database connections, and fetch; do not make real network calls.
+          5. Avoid modifying implementation files unless a test exposes a required fix.
+          6. Use branch ${BRANCH_NAME}.
+          7. Open the PR against main.
+          8. PR title format: test: add tests for story #${PARENT_ISSUE} (closes #${TESTS_ISSUE})
+          9. PR body first line: Closes #${TESTS_ISSUE}
+          10. Include Related to #${PARENT_ISSUE} and Tests implementation PR #${PR_NUMBER} lines.
+
+          Implementation diff excerpt:
+          $(cat "${RUNNER_TEMP}/implementation.diff")
+          INSTRUCTIONS
+
+          bash .github/scripts/assign-copilot-agent.sh "${TESTS_ISSUE}" "${RUNNER_TEMP}/tests-instructions.txt"
