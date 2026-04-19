@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ResultsRouteImport } from './routes/results'
 import { Route as PhysicianIdRouteImport } from './routes/physician.$id'
+import { Route as BlockedRouteImport } from './routes/blocked'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SavedRoute = SavedRouteImport.update({
@@ -29,6 +30,11 @@ const PhysicianIdRoute = PhysicianIdRouteImport.update({
   path: '/physician/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlockedRoute = BlockedRouteImport.update({
+  id: '/blocked',
+  path: '/blocked',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/results': typeof ResultsRoute
   '/saved': typeof SavedRoute
+  '/blocked': typeof BlockedRoute
   '/physician/$id': typeof PhysicianIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/results': typeof ResultsRoute
   '/saved': typeof SavedRoute
+  '/blocked': typeof BlockedRoute
   '/physician/$id': typeof PhysicianIdRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/results': typeof ResultsRoute
   '/saved': typeof SavedRoute
+  '/blocked': typeof BlockedRoute
   '/physician/$id': typeof PhysicianIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/results' | '/saved' | '/physician/$id'
+  fullPaths: '/' | '/results' | '/saved' | '/blocked' | '/physician/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/results' | '/saved' | '/physician/$id'
-  id: '__root__' | '/' | '/results' | '/saved' | '/physician/$id'
+  to: '/' | '/results' | '/saved' | '/blocked' | '/physician/$id'
+  id: '__root__' | '/' | '/results' | '/saved' | '/blocked' | '/physician/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ResultsRoute: typeof ResultsRoute
   SavedRoute: typeof SavedRoute
+  BlockedRoute: typeof BlockedRoute
   PhysicianIdRoute: typeof PhysicianIdRoute
 }
 
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PhysicianIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blocked': {
+      id: '/blocked'
+      path: '/blocked'
+      fullPath: '/blocked'
+      preLoaderRoute: typeof BlockedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ResultsRoute: ResultsRoute,
   SavedRoute: SavedRoute,
+  BlockedRoute: BlockedRoute,
   PhysicianIdRoute: PhysicianIdRoute,
 }
 export const routeTree = rootRouteImport
