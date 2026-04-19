@@ -65,14 +65,13 @@ uv run python generate_specialty_embeddings.py
 - Frontend: React, Vite, TanStack Router
 - Backend: Hono on Bun
 
-## Railway (landing page)
+## Railway (DocSeek landing site)
 
-Use **`landingPage`** as the service **Root Directory** so the build sees `package.json` and `Dockerfile` there.
+The landing app lives under **`landingPage/`**. On Railway, **the Git branch name is not the same thing as the service root directory.**
 
-Railway’s **config-as-code file is resolved from the repository root**, not from the Root Directory setting. So you must also set the service **config file path** (sometimes labeled “Railway config file” or under *Settings → Build → Config file*) to:
+1. **Settings → Source:** connect repo `DocSeek` and pick any branch that contains `landingPage/` (for example `landingPage` or `main`).
+2. **Settings → Root Directory:** click **“Add Root Directory”** and set **`landingPage`**.  
+   If this is empty, Railway builds from the **repository root**, where there is no `Dockerfile`—so you get *Dockerfile `Dockerfile` does not exist*.
+3. **Settings → Config file** (config as code): set to **`/landingPage/railway.json`** (path from the **repo root**, starts with `/`). That file selects the **Dockerfile** builder so Railpack is not used for this static site.
 
-`/landingPage/railway.json`
-
-That file pins the **Dockerfile** builder so Railway does not try Railpack on this static Vite app.
-
-If you intentionally keep the service root at the **monorepo root** instead, use config path **`/railway.landing.toml`** (builds via `Dockerfile.landing` at the repo root).
+If you prefer **not** to set Root Directory, do not use `landingPage/railway.json`. Instead set the config file to **`/railway.landing.toml`** at the repo root (that build uses **`Dockerfile.landing`**).
