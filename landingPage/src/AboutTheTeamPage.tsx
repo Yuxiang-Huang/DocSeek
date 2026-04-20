@@ -29,7 +29,12 @@ function TeamMemberBlock({
 					height={192}
 					loading="lazy"
 					decoding="async"
-					className="h-40 w-40 rounded-full object-cover shadow-[0_12px_40px_-12px_rgba(46,230,214,0.35)] ring-2 ring-teal-400/35 ring-offset-4 ring-offset-[#050816] sm:h-48 sm:w-48"
+					style={
+						member.portraitObjectPosition
+							? { objectPosition: member.portraitObjectPosition }
+							: undefined
+					}
+					className="h-40 w-40 rounded-full object-cover object-center shadow-[0_12px_40px_-12px_rgba(46,230,214,0.35)] ring-2 ring-teal-400/35 ring-offset-4 ring-offset-[#050816] sm:h-48 sm:w-48"
 				/>
 			</div>
 			<div

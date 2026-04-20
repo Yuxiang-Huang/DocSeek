@@ -4,6 +4,8 @@ export type AboutTeamMember = {
 	readonly description: string;
 	/** File under `public/headshots/` (URL-encoded when used). */
 	readonly imageFilename: string;
+	/** Optional `object-position` for circular `object-cover` crops (e.g. `"78% 45%"`). */
+	readonly portraitObjectPosition?: string;
 };
 
 /**
@@ -17,6 +19,7 @@ export const aboutTeamMembers: readonly AboutTeamMember[] = [
 		description:
 			"Ships the DocSeek client experience—search flows, saved physicians, and keeping the app fast for families comparing UPMC options around Pittsburgh.",
 		imageFilename: "IMG_0360 2.JPG",
+		portraitObjectPosition: "82% 44%",
 	},
 	{
 		name: "Sam Rivera",
@@ -38,6 +41,14 @@ export const aboutTeamMembers: readonly AboutTeamMember[] = [
 		description:
 			"Runs feedback sessions with neighbors and caregivers, then turns what we hear into clearer filters, copy, and next-step guidance.",
 		imageFilename: "10.8.2025 CMU Media Day_0337.JPEG",
+	},
+	{
+		name: "Taylor Nguyen",
+		role: "Engineering & integrations",
+		description:
+			"Keeps deployment paths smooth, tightens observability, and helps the team ship confidently when directory data or hosting details change.",
+		imageFilename: "IMG_7382 2.PNG",
+		portraitObjectPosition: "44% 68%",
 	},
 ];
 

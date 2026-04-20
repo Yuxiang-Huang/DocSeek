@@ -11,9 +11,15 @@ describe("aboutTeamMembers", () => {
 		);
 	});
 
-	test("roster lists four members with unique image filenames", () => {
-		expect(aboutTeamMembers).toHaveLength(4);
+	test("roster lists five members with unique image filenames", () => {
+		expect(aboutTeamMembers).toHaveLength(5);
 		const names = new Set(aboutTeamMembers.map((m) => m.imageFilename));
-		expect(names.size).toBe(4);
+		expect(names.size).toBe(5);
+	});
+
+	test("publicHeadshotSrc encodes PNG with spaces", () => {
+		expect(publicHeadshotSrc("IMG_7382 2.PNG")).toBe(
+			"/headshots/IMG_7382%202.PNG",
+		);
 	});
 });
