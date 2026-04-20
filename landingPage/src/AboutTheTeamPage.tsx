@@ -113,11 +113,10 @@ export function AboutTheTeamPage() {
 							id="team-roster-heading"
 							className="text-center text-2xl font-semibold text-white sm:text-3xl"
 						>
-							Who builds DocSeek
+							Our Leadership Team
 						</h2>
 						<p className="mx-auto mt-3 max-w-2xl text-center text-sm text-doc-muted sm:text-base">
-							We rotate who leads releases, but these are the folks behind the
-							landing experience and the search product today.
+							The people behind DocSeek
 						</p>
 						<div className="mx-auto mt-14 flex max-w-4xl flex-col gap-16 sm:gap-20">
 							{aboutTeamMembers.map((member, index) => (

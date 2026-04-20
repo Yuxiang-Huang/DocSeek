@@ -30,8 +30,9 @@ describe("AboutTheTeamPage", () => {
 	test("renders five team portraits with bios", () => {
 		renderSite("/about-the-team");
 		expect(
-			screen.getByRole("heading", { name: /Who builds DocSeek/i }),
+			screen.getByRole("heading", { name: /Our Leadership Team/i }),
 		).toBeTruthy();
+		expect(screen.getByText(/The people behind DocSeek/i)).toBeTruthy();
 		const portraits = screen.getAllByRole("img", { name: /^Portrait of /i });
 		expect(portraits).toHaveLength(5);
 		expect(portraits[0].getAttribute("src")).toContain("/headshots/");
