@@ -9,47 +9,46 @@ export type AboutTeamMember = {
 };
 
 /**
- * Order = left/right alternation on large screens (first row: photo left).
- * Swap entries to match each portrait; edit copy anytime.
+ * Display order on About (top → bottom). Alternates photo left/right on `sm+`.
  */
 export const aboutTeamMembers: readonly AboutTeamMember[] = [
 	{
-		name: "Jordan Lee",
-		role: "Full-stack engineering",
+		name: "Yuxiang Huang",
+		role: "Chief Technology Officer",
 		description:
-			"Ships the DocSeek client experience—search flows, saved physicians, and keeping the app fast for families comparing UPMC options around Pittsburgh.",
-		imageFilename: "IMG_0360 2.JPG",
-		portraitObjectPosition: "94% 42%",
-	},
-	{
-		name: "Sam Rivera",
-		role: "Backend & data",
-		description:
-			"Connects physician directory data to the API, tightens query behavior, and helps the product stay trustworthy as listings change.",
-		imageFilename: "1706579810047.JPEG",
-	},
-	{
-		name: "Alex Kim",
-		role: "Design & UX writing",
-		description:
-			"Shapes tone, layout, and onboarding so first-time visitors understand what DocSeek does—and what it does not—before they search.",
-		imageFilename: "IMG_5983.JPEG",
-	},
-	{
-		name: "Riley Chen",
-		role: "Product & outreach",
-		description:
-			"Runs feedback sessions with neighbors and caregivers, then turns what we hear into clearer filters, copy, and next-step guidance.",
-		imageFilename: "10.8.2025 CMU Media Day_0337.JPEG",
-		portraitObjectPosition: "22% 82%",
-	},
-	{
-		name: "Taylor Nguyen",
-		role: "Engineering & integrations",
-		description:
-			"Keeps deployment paths smooth, tightens observability, and helps the team ship confidently when directory data or hosting details change.",
+			"Hello, I'm an Information Systems and Computer Science major at Carnegie Mellon University.",
 		imageFilename: "IMG_7382 2.PNG",
 		portraitObjectPosition: "44% 68%",
+	},
+	{
+		name: "Christine Truong",
+		role: "Chief Operating Officer",
+		description:
+			"Hi! I'm currently a fourth-year student at Carnegie Mellon University majoring in Computer Science with a minor in Business.",
+		imageFilename: "IMG_0360 2.JPG",
+	},
+	{
+		name: "Alex Chen",
+		role: "Chief Executive Officer",
+		description:
+			"I am an information systems major at CMU. ",
+		imageFilename: "1706579810047.JPEG",
+		
+	},
+	{
+		name: "Wenna Zhang",
+		role: "Chief Information Officer",
+		description:
+			"I am currently a CMU student majoring in Information Systems",
+		imageFilename: "10.8.2025 CMU Media Day_0337.JPEG",
+		portraitObjectPosition: "-15% 30%",
+	},
+	{
+		name: "Andrew Xue",
+		role: "Chief Financial Officer",
+		description:
+			"Hey there! I'm a student at Carnegie Mellon University, and I like to play Pokémon Go in my free time.",
+		imageFilename: "IMG_5983.JPEG",
 	},
 ];
 
