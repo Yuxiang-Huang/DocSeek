@@ -19,7 +19,7 @@ export const aboutTeamMembers: readonly AboutTeamMember[] = [
 		description:
 			"Ships the DocSeek client experience—search flows, saved physicians, and keeping the app fast for families comparing UPMC options around Pittsburgh.",
 		imageFilename: "IMG_0360 2.JPG",
-		portraitObjectPosition: "82% 44%",
+		portraitObjectPosition: "94% 42%",
 	},
 	{
 		name: "Sam Rivera",
@@ -41,6 +41,7 @@ export const aboutTeamMembers: readonly AboutTeamMember[] = [
 		description:
 			"Runs feedback sessions with neighbors and caregivers, then turns what we hear into clearer filters, copy, and next-step guidance.",
 		imageFilename: "10.8.2025 CMU Media Day_0337.JPEG",
+		portraitObjectPosition: "22% 82%",
 	},
 	{
 		name: "Taylor Nguyen",
