@@ -1,5 +1,56 @@
 import { Stethoscope } from "lucide-react";
 import { Link } from "react-router-dom";
+import {
+	type AboutTeamMember,
+	aboutTeamMembers,
+	publicHeadshotSrc,
+} from "./aboutTeamMembers";
+
+function TeamMemberBlock({
+	member,
+	reversed,
+}: {
+	member: AboutTeamMember;
+	reversed: boolean;
+}) {
+	const src = publicHeadshotSrc(member.imageFilename);
+	return (
+		<article
+			className={[
+				"flex flex-col items-center gap-8 sm:flex-row sm:items-center sm:gap-12",
+				reversed ? "sm:flex-row-reverse" : "",
+			].join(" ")}
+		>
+			<div className="shrink-0">
+				<img
+					src={src}
+					alt={`Portrait of ${member.name}`}
+					width={192}
+					height={192}
+					loading="lazy"
+					decoding="async"
+					className="h-40 w-40 rounded-full object-cover shadow-[0_12px_40px_-12px_rgba(46,230,214,0.35)] ring-2 ring-teal-400/35 ring-offset-4 ring-offset-[#050816] sm:h-48 sm:w-48"
+				/>
+			</div>
+			<div
+				className={[
+					"max-w-xl flex-1 space-y-2 text-center",
+					reversed ? "sm:text-right" : "sm:text-left",
+				].join(" ")}
+			>
+				<h2 className="text-xl font-semibold text-white sm:text-2xl">
+					{member.name}
+				</h2>
+				<p className="text-sm font-medium uppercase tracking-wide text-teal-300/95">
+					{member.role}
+				</p>
+				<p className="text-sm leading-relaxed text-doc-muted sm:text-base">
+					{member.description}
+				</p>
+			</div>
+		</article>
+	);
+}
 
 export function AboutTheTeamPage() {
 	return (
@@ -28,11 +79,11 @@ export function AboutTheTeamPage() {
 					</div>
 				</header>
 
-				<main className="mx-auto max-w-3xl flex-1 px-4 py-14 sm:px-6">
+				<main className="mx-auto w-full max-w-5xl flex-1 px-4 py-14 sm:px-6">
 					<h1 className="text-3xl font-semibold text-white sm:text-4xl">
 						About the team
 					</h1>
-					<div className="mt-8 space-y-4 text-doc-muted sm:text-base">
+					<div className="mt-8 max-w-3xl space-y-4 text-doc-muted sm:text-base">
 						<p>
 							We are a small group focused on{" "}
 							<span className="font-medium text-white/85">
@@ -48,6 +99,31 @@ export function AboutTheTeamPage() {
 							email from your organization).
 						</p>
 					</div>
+
+					<section
+						className="mt-16 border-t border-white/[0.08] pt-16"
+						aria-labelledby="team-roster-heading"
+					>
+						<h2
+							id="team-roster-heading"
+							className="text-center text-2xl font-semibold text-white sm:text-3xl"
+						>
+							Who builds DocSeek
+						</h2>
+						<p className="mx-auto mt-3 max-w-2xl text-center text-sm text-doc-muted sm:text-base">
+							We rotate who leads releases, but these are the folks behind the
+							landing experience and the search product today.
+						</p>
+						<div className="mx-auto mt-14 flex max-w-4xl flex-col gap-16 sm:gap-20">
+							{aboutTeamMembers.map((member, index) => (
+								<TeamMemberBlock
+									key={member.imageFilename}
+									member={member}
+									reversed={index % 2 === 1}
+								/>
+							))}
+						</div>
+					</section>
 				</main>
 
 				<footer className="mt-auto border-t border-white/[0.06] py-8">

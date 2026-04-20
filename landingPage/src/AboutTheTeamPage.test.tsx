@@ -26,4 +26,14 @@ describe("AboutTheTeamPage", () => {
 		const logo = screen.getByRole("link", { name: /DocSeek/i });
 		expect(logo.getAttribute("href")).toBe("/");
 	});
+
+	test("renders four team portraits with bios", () => {
+		renderSite("/about-the-team");
+		expect(
+			screen.getByRole("heading", { name: /Who builds DocSeek/i }),
+		).toBeTruthy();
+		const portraits = screen.getAllByRole("img", { name: /^Portrait of /i });
+		expect(portraits).toHaveLength(4);
+		expect(portraits[0].getAttribute("src")).toContain("/headshots/");
+	});
 });
