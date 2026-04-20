@@ -28,7 +28,7 @@ export const aboutTeamMembers: readonly AboutTeamMember[] = [
 		imageFilename: "IMG_0360 2.JPG",
 	},
 	{
-		name: "Alex Chen",
+		name: "Alex Cheung",
 		role: "Chief Executive Officer",
 		description:
 			"I am an information systems major at CMU. ",
