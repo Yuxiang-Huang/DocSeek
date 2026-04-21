@@ -1,0 +1,7 @@
+# Smaller build context for root-level Docker builds (e.g. Dockerfile.landing, api/Dockerfile).
+.git
+**/node_modules
+**/dist
+*.mov
+DocSeek-acceptance-test-*/
+acceptanceTests.local-before-main-merge/

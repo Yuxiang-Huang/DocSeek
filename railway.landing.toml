@@ -1,0 +1,15 @@
+# Use when the Railway service root is the monorepo root (not `landingPage/`).
+# In Railway: service → Settings → set "Config as code" path to:
+#   /railway.landing.toml
+#
+# When the service Root Directory is `landingPage`, point config at (repo-absolute path):
+#   /landingPage/railway.json
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.landing"
+
+[deploy]
+startCommand = "node scripts/railway-serve.mjs"
+healthcheckPath = "/"
+healthcheckTimeout = 120
