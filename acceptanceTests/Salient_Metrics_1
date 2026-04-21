@@ -1,0 +1,12 @@
+Metric 1: 
+Frequency of Relevance Rate; rate how many of the result the physician cards are rated as least to most relevant.
+I picked this because users make trust judgments in the first few seconds, and those judgments are based almost entirely on the first cards they see. 
+If number of relevant results is low, users will abandon quickly even if later recommendations are good. This is highly actionable because it tells us whether ranking and matching are working where user attention is highest.
+
+Metric 2: 
+First Card Selection Confidence Rate ; Percent of sessions where users report they have enough information to decide from the first card.
+I picked this because this metric shows whether the product reduces decision effort, which is the real value proposition for a patient in need. Lean Startup emphasizes outcomes over activity, and "I can choose now" is a stronger outcome than "I liked the UI." It also aligns with The Mom Test by focusing on what users can do, not just what they say they liked.
+
+Metric 3: 
+Ranking Agreement Rate;Percent of sessions where users agree earlier cards were better matches than later cards.
+A system can return relevant doctors but still fail if the best options are buried. Ranking agreement isolates ordering quality from raw match quality, which makes diagnosis faster when results feel "mostly right, but not in the right order." Improving this metric directly reduces scrolling, comparison time, and cognitive load.
